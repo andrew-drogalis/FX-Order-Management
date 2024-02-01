@@ -5,5 +5,7 @@ CMakeFiles/
 _deps/
 Makefile
 cmake_install.cmake
+private_credentials.h
 *.log
 *.json
+FX-Order-Management*

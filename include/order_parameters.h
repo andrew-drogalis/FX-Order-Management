@@ -1,5 +1,5 @@
-#ifndef TRADING_PARAMS_H
-#define TRADING_PARAMS_H
+#ifndef ORDER_PARAMETERS_H
+#define ORDER_PARAMETERS_H
 
 #include <string>
 #include <vector>

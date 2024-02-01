@@ -11,6 +11,8 @@
     * [Setting Password in Keyring](#Setting-Password-in-Keyring)
     * [Updating Trading Model](#Updating-Trading-Model)
     * [Switch to Live Trading](#Switch-to-Live-Trading)
+    * [Profitability Reports](#Profitability-Reports)
+    * [Closing Trades Manually](#Closing-Trades-Manually)
 * [Building Executable](#Building-Executable)
 * [Dependencies](#Dependencies)
 * [License](#License)
@@ -62,8 +64,8 @@ Please see a link to required dependencies [below](#Dependencies). If you are in
 ### Updating Order Parameters
 
 ```c
-    #ifndef TRADING_PARAMS_H
-    #define TRADING_PARAMS_H
+    #ifndef ORDER_PARAMETERS_H
+    #define ORDER_PARAMETERS_H
 
     #include <string>
     #include <vector>
@@ -156,6 +158,56 @@ int main() {
     // Set Account Type
     string ACCOUNT = "PAPER"; 
     bool PLACE_TRADES = false; 
+```
+
+### Profitability Reports
+
+```json
+{
+    "Last Updated": "Thu Feb  1 14:04:06 2024",
+    "Performance Information": {
+        "Current Funds": 45884.16015,
+        "Inital Funds": 45887.76171,
+        "Margin Utilized": 121.73000,
+        "Profit Cumulative": -3.59999,
+        "Profit Percent Cumulative": -0.0
+    },
+    "Position Information": {
+        "EUR/USD": {
+            "Current Price": 1.087210,
+            "Direction": "buy",
+            "Entry Price": 1.08727,
+            "Profit": -5.999999e-05,
+            "Profit Percent": -0.009999,
+            "Quantity": 1000.0
+        },
+        "USD/CAD": {
+            "Current Price": 1.337329,
+            "Direction": "buy",
+            "Entry Price": 1.33754,
+            "Profit": -0.000209,
+            "Profit Percent": -0.019999,
+            "Quantity": 1000.0
+        }
+    }
+}
+```
+
+### Closing Trades Manually
+
+Changing the value to true will either close the trade immediately upon the update interval, or wait until the trading model signal changes.
+
+```json
+{
+    "EUR/USD": {
+        "Close Immediately": false,
+        "Close On Trade Signal Change": false
+    },
+    "USD/CAD": {
+        "Close Immediately": false,
+        "Close On Trade Signal Change": false
+    }
+}
 ```
 
 # Building Executable

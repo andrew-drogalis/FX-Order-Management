@@ -10,7 +10,7 @@ string account_username = "BLANK";
 
 string paper_account_username = "BLANK";
 
-string forex_api_key = "BLANK";
+string forex_api_key = "BLANK"; 
 
 // Store Passwords in Keyring.
 

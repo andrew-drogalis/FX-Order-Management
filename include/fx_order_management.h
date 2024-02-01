@@ -31,7 +31,6 @@ class FXOrderManagement {
         string trading_account;
         string service_id;
         string package;
-        unsigned int refresh_session_time;
         GCapiClient session;
 
         // For Trading Indicator
@@ -67,11 +66,13 @@ class FXOrderManagement {
         long unsigned int market_close_time;
 
         // General Use
-        bool will_market_be_open_today;
+        bool will_market_be_open_tomorrow;
         int update_frequency_seconds;
 
 
         void gain_capital_session();
+
+        void read_input_information();
 
         void output_order_information();
 
@@ -100,6 +101,10 @@ class FXOrderManagement {
         void verify_trades_opened(nlohmann::json trade_dict);
 
         void setup_password_first_time(string account_type);
+
+        void init_logging(string working_directory);
+
+        string get_todays_date();
 };
 
 #endif

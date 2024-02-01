@@ -11,16 +11,22 @@ class GCapiClient {
 
     public:
         cpr::Header session_header;
+        nlohmann::json auth_payload;
         nlohmann::json session_payload;
         std::string rest_url_v2;
         std::string rest_url;
         std::string trading_account_id = "";
         std::string client_account_id = "";
+        std::string session_username;
         std::map<std::string, int> market_id_map;
 
         GCapiClient();
 
         GCapiClient(std::string username, std::string password, std::string appkey);
+
+        void authenticate_session();
+
+        void validate_session();
 
         nlohmann::json get_account_info(std::string param = "");
 
