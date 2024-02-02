@@ -48,7 +48,7 @@ Please see a link to required dependencies [below](#Dependencies). If you are in
     #include <string>
     #include <vector>
 
-    using namespace std;
+    namespace std {
 
     string account_username = "BLANK";
 
@@ -57,6 +57,8 @@ Please see a link to required dependencies [below](#Dependencies). If you are in
     string forex_api_key = "BLANK";
 
     // Store Passwords in Keyring.
+
+    }
 
     #endif
 ```
@@ -70,7 +72,7 @@ Please see a link to required dependencies [below](#Dependencies). If you are in
     #include <string>
     #include <vector>
 
-    using namespace std;
+    namespace std {
 
     vector<string> fx_symbols_to_trade = {"USD/JPY", "EUR/USD", "USD/CHF", "USD/CAD"};
 
@@ -81,6 +83,8 @@ Please see a link to required dependencies [below](#Dependencies). If you are in
     string update_interval = "MINUTE"; // MINUTE or HOUR
 
     int update_span = 5; // Span of Interval e.g. 5 Minutes
+
+    }
 
     #endif
 ```
@@ -117,11 +121,12 @@ Please don't run in a live trading environment with the placeholder trading mode
 
 ```c
 #include <trading_model.h>
+
 #include <map>
 #include <vector>
 #include <string>
 
-using namespace std;
+namespace std {
 
 TradingModel::TradingModel() { }
 
@@ -135,6 +140,8 @@ TradingModel::TradingModel(map<string, vector<float>> historical_data){
 
 }
 
+TradingModel::~TradingModel() { }
+
 void TradingModel::receive_latest_market_data(map<string, vector<float>> historical_data) {
 
 }
@@ -146,6 +153,8 @@ int TradingModel::send_trading_signal(){
     signal = (signal > 0.5) ? 1 : -1;
 
     return signal;
+}
+
 }
 ```
 
@@ -166,10 +175,10 @@ int main() {
 {
     "Last Updated": "Thu Feb  1 14:04:06 2024",
     "Performance Information": {
-        "Current Funds": 45884.16015,
-        "Inital Funds": 45887.76171,
-        "Margin Utilized": 121.73000,
-        "Profit Cumulative": -3.59999,
+        "Current Funds": 45884.16,
+        "Inital Funds": 45887.76,
+        "Margin Utilized": 121.73,
+        "Profit Cumulative": -3.59,
         "Profit Percent Cumulative": -0.0
     },
     "Position Information": {

@@ -1,14 +1,6 @@
 
 #include <fx_order_management.h>
-#include <trading_model.h>
-#include <credentials.h>
-#include <order_parameters.h>
-#include <gain_capital_api.h>
-#include <json.hpp>
-#include <keychain.h>
-#include <boost/log/trivial.hpp>
-#include <boost/log/utility/setup/file.hpp>
-#include <boost/log/utility/setup/common_attributes.hpp>
+
 #include <iostream>
 #include <fstream>
 #include <array>
@@ -21,9 +13,22 @@
 #include <format>
 #include <valarray>
 
-using namespace std;
+#include <gain_capital_api.h>
+#include <json.hpp>
+#include <keychain.h>
+#include <boost/log/trivial.hpp>
+#include <boost/log/utility/setup/file.hpp>
+#include <boost/log/utility/setup/common_attributes.hpp>
+
+#include <trading_model.h>
+#include <credentials.h>
+#include <order_parameters.h>
+
+namespace std {
 
 FXOrderManagement::FXOrderManagement() { }
+
+FXOrderManagement::~FXOrderManagement() { }
 
 FXOrderManagement::FXOrderManagement(string account, bool place_tr, int emerg_close, string working_directory) {
 
@@ -429,7 +434,7 @@ void FXOrderManagement::build_trades_map() {
                         trades_map[symbol] = {
                             {"Quantity", live_quantity},
                             {"Direction", new_direction},
-                            {"Final Quantity", "0"}
+                            {"Final Quantity", 0}
                             };
                     }
                     else {
@@ -457,7 +462,7 @@ void FXOrderManagement::build_trades_map() {
                         trades_map[symbol] = {
                             {"Quantity",live_quantity},
                             {"Direction", new_direction},
-                            {"Final Quantity", "0"}
+                            {"Final Quantity", 0}
                             };
                     }
                     else {
@@ -923,4 +928,6 @@ string FXOrderManagement::get_todays_date() {
     strftime(DATE_TODAY, sizeof(DATE_TODAY), "%Y_%m_%d", tmp);
 
     return DATE_TODAY;
+}
+
 }

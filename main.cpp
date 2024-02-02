@@ -1,18 +1,19 @@
 
-#include <fx_order_management.h>
 #include <iostream>
 #include <filesystem>
 #include <string>
 #include <ctime>
 #include <exception>
 
-using namespace std;
+#include <fx_order_management.h>
+
+namespace std {
 
 int main() {
     // Set Account Type
     string ACCOUNT = "PAPER"; 
     bool PLACE_TRADES = true; 
-    int EMERGENCY_CLOSE;
+    int EMERGENCY_CLOSE = 0;
 
     if (ACCOUNT != "PAPER" && ACCOUNT != "LIVE") {
         std::cerr << "Wrong Account Type; Please Select 'PAPER' or 'LIVE'" << std::endl;
@@ -48,4 +49,6 @@ int main() {
     cout << "FX Order Management - Program Terminated Successfully: " << ctime(&end_time) << endl;
 
     return 0;
+}
+
 }

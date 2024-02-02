@@ -1,20 +1,24 @@
 #ifndef FX_ORDER_MANAGEMENT_H
 #define FX_ORDER_MANAGEMENT_H
 
-#include <trading_model.h>
-#include <gain_capital_api.h>
-#include <json.hpp>
 #include <string>
 #include <vector>
 #include <map>
 
-using namespace std;
+#include <gain_capital_api.h>
+#include <json.hpp>
+
+#include <trading_model.h>
+
+namespace std {
 
 class FXOrderManagement {
 
     public:
 
         FXOrderManagement();
+
+        ~FXOrderManagement();
 
         FXOrderManagement(string account, bool place_trades, int clear_system, string sys_path);
 
@@ -106,5 +110,7 @@ class FXOrderManagement {
 
         string get_todays_date();
 };
+
+}
 
 #endif

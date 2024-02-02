@@ -1,11 +1,12 @@
 
 #include <trading_model.h>
+
 #include <map>
 #include <vector>
 #include <string>
 
-using namespace std;
-
+namespace std {
+    
 TradingModel::TradingModel() { }
 
 TradingModel::TradingModel(map<string, vector<float>> historical_data){
@@ -18,6 +19,8 @@ TradingModel::TradingModel(map<string, vector<float>> historical_data){
 
 }
 
+TradingModel::~TradingModel() { }
+
 void TradingModel::receive_latest_market_data(map<string, vector<float>> historical_data) {
 
 }
@@ -29,5 +32,7 @@ int TradingModel::send_trading_signal(){
     signal = (signal > 0.5) ? 1 : -1;
 
     return signal;
+}
+
 }
 
