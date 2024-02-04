@@ -224,7 +224,7 @@ Changing the value to true will either close the trade immediately upon the upda
 ```
     $ mkdir build
     $ cmake -S . -B build
-    $ cmake --build build --target FX_Order_Management
+    $ cmake --build build --target FX-Order-Management
 ```
 
 # Dependencies
