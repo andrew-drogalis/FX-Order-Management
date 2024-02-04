@@ -234,6 +234,7 @@ Changing the value to true will either close the trade immediately upon the upda
 - [OpenSSL](https://www.openssl.org/) - *Must be installed by user*
 - [CPR](https://github.com/libcpr/cpr) - Included in CMake Fetch Content
 - [JSON](https://github.com/nlohmann/json) - .hpp file included in repository
+- [Gain Capital API C++](https://github.com/andrew-drogalis/Gain-Capital-API-Cpp) - Library included in repository
 - [Keychain](https://github.com/hrantzsch/keychain) - Library included in repository
 
 ## License

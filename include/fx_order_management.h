@@ -9,6 +9,8 @@
 #include <json.hpp>
 
 #include <trading_model.h>
+#include <fx_utilities.h>
+#include <fx_market_time.h>
 
 namespace std {
 
@@ -56,6 +58,7 @@ class FXOrderManagement {
         map<string, long unsigned int> price_data_update_datetime;
         vector<string> data_error_list;
         vector<string> live_symbols_list;
+
         // Placing Trades
         int execution_loop_count;
 
@@ -64,39 +67,24 @@ class FXOrderManagement {
         float equity_total;
         float init_equity;
         
-        // Forex Time 
-        long unsigned int FX_market_start;
-        long unsigned int FX_market_end;
-        long unsigned int market_close_time;
-
         // General Use
-        bool will_market_be_open_tomorrow;
         int update_frequency_seconds;
-
+        FXUtilities fx_utilities = FXUtilities();
+        FXMarketTime fx_market_time;
 
         void gain_capital_session();
-
-        void read_input_information();
-
-        void output_order_information();
 
         void initalize_trading_model(string symbol);
 
         void get_trading_model_signal();
 
-        void forex_market_time_setup();
-
-        bool market_closed();
-
-        bool forex_market_exit_only();
-
         void build_trades_map();
 
         void emergency_position_close();
 
-        void return_price_history(vector<string> symbols_list);
-
         void return_tick_history(vector<string> symbols_list);
+
+        void return_price_history(vector<string> symbols_list);        
 
         void pause_next_bar();
 
@@ -104,11 +92,10 @@ class FXOrderManagement {
 
         void verify_trades_opened(nlohmann::json trade_dict);
 
-        void setup_password_first_time(string account_type);
+        void read_input_information();
 
-        void init_logging(string working_directory);
+        void output_order_information();
 
-        string get_todays_date();
 };
 
 }

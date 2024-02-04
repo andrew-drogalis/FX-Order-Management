@@ -12,7 +12,9 @@ include(GNUInstallDirs)
 # Build Executable
 add_executable(${PROJECT_NAME} main.cpp
                 src/fx_order_management.cpp
-                src/trading_model.cpp)
+                src/trading_model.cpp
+                src/fx_market_time.cpp
+                src/fx_utilities.cpp)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES 
                         VERSION ${PROJECT_VERSION})
@@ -36,6 +38,7 @@ set_target_properties( gain_capital_api PROPERTIES IMPORTED_LOCATION ${CMAKE_CUR
 
 target_link_libraries(${PROJECT_NAME} LINK_PUBLIC ${Boost_LIBRARIES} gain_capital_api)
 
+# For KeyChain 
 if (WIN32)
 
     target_sources(${PROJECT_NAME}

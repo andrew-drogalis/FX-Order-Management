@@ -7,11 +7,9 @@
 
 #include <fx_order_management.h>
 
-namespace std {
-
 int main() {
     // Set Account Type
-    string ACCOUNT = "PAPER"; 
+    std::string ACCOUNT = "PAPER"; 
     bool PLACE_TRADES = true; 
     int EMERGENCY_CLOSE = 0;
 
@@ -20,35 +18,33 @@ int main() {
         std::terminate();
     }
     else {
-        cout << "Account Type Initialized: " << ACCOUNT << "\n" << endl;
+        std::cout << "Account Type Initialized: " << ACCOUNT << "\n" << std::endl;
     }
 
     // Check if Emergency Scenario
     while (true) {
-        cout << "Close All Open Positions?\n\nPlease Enter: 1 = True; 0 = False;\n\nYour Selection: ";
-        cin >> EMERGENCY_CLOSE;
-        cout << endl;
+        std::cout << "Close All Open Positions?\n\nPlease Enter: 1 = True; 0 = False;\n\nYour Selection: ";
+        std::cin >> EMERGENCY_CLOSE;
+        std::cout << std::endl;
 
         if (EMERGENCY_CLOSE == 1 || EMERGENCY_CLOSE == 0) { break;}
         else {
-            cout << "Wrong Input\n";
+            std::cout << "Wrong Input\n";
         }
     }
 
     // Set Logging Parameters
-    string working_directory = filesystem::current_path();
+    std::string working_directory = std::filesystem::current_path();
 
     // Initalize Order Management
-    FXOrderManagement fx = FXOrderManagement(ACCOUNT, PLACE_TRADES, EMERGENCY_CLOSE, working_directory);
+    std::FXOrderManagement fx = std::FXOrderManagement(ACCOUNT, PLACE_TRADES, EMERGENCY_CLOSE, working_directory);
 
     if (EMERGENCY_CLOSE == 0) {
         fx.run_order_management_system();
     }
 
     time_t end_time = time(NULL);
-    cout << "FX Order Management - Program Terminated Successfully: " << ctime(&end_time) << endl;
+    std::cout << "FX Order Management - Program Terminated Successfully: " << ctime(&end_time) << std::endl;
 
     return 0;
-}
-
 }
