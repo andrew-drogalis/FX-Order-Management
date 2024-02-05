@@ -37,7 +37,7 @@ int main() {
     std::string working_directory = std::filesystem::current_path();
 
     // Initalize Order Management
-    std::FXOrderManagement fx = std::FXOrderManagement(ACCOUNT, PLACE_TRADES, EMERGENCY_CLOSE, working_directory);
+    fxordermgmt::FXOrderManagement fx = fxordermgmt::FXOrderManagement(ACCOUNT, PLACE_TRADES, EMERGENCY_CLOSE, working_directory);
 
     if (EMERGENCY_CLOSE == 0) {
         fx.run_order_management_system();

@@ -5,7 +5,7 @@
 #include <vector>
 #include <string>
 
-namespace std {
+namespace fxordermgmt {
 
 class TradingModel {
 

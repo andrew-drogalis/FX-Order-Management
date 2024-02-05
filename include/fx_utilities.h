@@ -3,7 +3,7 @@
 
 #include <string>
 
-namespace std {
+namespace fxordermgmt {
 
 class FXUtilities {
 
@@ -13,11 +13,11 @@ class FXUtilities {
 
         ~FXUtilities();
 
-        void setup_password_first_time(string account_type, string username);
+        void setup_password_first_time(std::string account_type, std::string username);
 
-        void init_logging(string working_directory);
+        void init_logging(std::string working_directory);
 
-        string get_todays_date();
+        std::string get_todays_date();
 
 };
 

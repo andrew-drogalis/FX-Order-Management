@@ -3,7 +3,7 @@
 
 #include <fx_utilities.h>
 
-namespace std {
+namespace fxordermgmt {
 
 class FXMarketTime {
 

@@ -4,13 +4,13 @@
 #include <string>
 #include <vector>
 
-namespace std {
+namespace fxordermgmt {
 
-string account_username = "BLANK";
+std::string account_username = "BLANK";
 
-string paper_account_username = "BLANK";
+std::string paper_account_username = "BLANK";
 
-string forex_api_key = "BLANK"; 
+std::string forex_api_key = "BLANK"; 
 
 // Store Passwords in Keyring.
 

@@ -12,7 +12,7 @@
 #include <fx_utilities.h>
 #include <fx_market_time.h>
 
-namespace std {
+namespace fxordermgmt {
 
 class FXOrderManagement {
 
@@ -22,7 +22,7 @@ class FXOrderManagement {
 
         ~FXOrderManagement();
 
-        FXOrderManagement(string account, bool place_trades, int clear_system, string sys_path);
+        FXOrderManagement(std::string account, bool place_trades, int clear_system, std::string sys_path);
 
         void run_order_management_system();
 
@@ -31,33 +31,33 @@ class FXOrderManagement {
         // Passed Through Constructor
         bool place_trades;
         int emergency_close;
-        string sys_path;
+        std::string sys_path;
 
         // Gain Capital Parameters
-        string trading_account;
-        string service_id;
-        string package;
+        std::string trading_account;
+        std::string service_id;
+        std::string package;
         GCapiClient session;
 
         // For Trading Indicator
-        map<string, int> main_signals;
-        map<string, TradingModel> trading_model_map;
-        map<string, map<string,vector<float>>> historical_data_map;
+        std::map<std::string, int> main_signals;
+        std::map<std::string, TradingModel> trading_model_map;
+        std::map<std::string, std::map<std::string,std::vector<float>>> historical_data_map;
 
         // Build Trades Map
-        map<string, map<string, string>> trades_map;
-        map<string, int> position_multiplier;
-        vector<string> execute_list;
+        std::map<std::string, std::map<std::string, std::string>> trades_map;
+        std::map<std::string, int> position_multiplier;
+        std::vector<std::string> execute_list;
         nlohmann::json open_positions;
 
         // Getting Price History
         long unsigned int last_bar_timestamp;
         long unsigned int next_bar_timestamp;
-        vector<string> price_data_update_failure;
-        map<string, int> price_data_update_failure_count;
-        map<string, long unsigned int> price_data_update_datetime;
-        vector<string> data_error_list;
-        vector<string> live_symbols_list;
+        std::vector<std::string> price_data_update_failure;
+        std::map<std::string, int> price_data_update_failure_count;
+        std::map<std::string, long unsigned int> price_data_update_datetime;
+        std::vector<std::string> data_error_list;
+        std::vector<std::string> live_symbols_list;
 
         // Placing Trades
         int execution_loop_count;
@@ -74,7 +74,7 @@ class FXOrderManagement {
 
         void gain_capital_session();
 
-        void initalize_trading_model(string symbol);
+        void initalize_trading_model(std::string symbol);
 
         void get_trading_model_signal();
 
@@ -82,9 +82,9 @@ class FXOrderManagement {
 
         void emergency_position_close();
 
-        void return_tick_history(vector<string> symbols_list);
+        void return_tick_history(std::vector<std::string> symbols_list);
 
-        void return_price_history(vector<string> symbols_list);        
+        void return_price_history(std::vector<std::string> symbols_list);        
 
         void pause_next_bar();
 

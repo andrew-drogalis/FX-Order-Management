@@ -10,22 +10,22 @@
 #include <boost/log/utility/setup/common_attributes.hpp>
 #include <keychain.h>
 
-namespace std {
+namespace fxordermgmt {
 
 FXUtilities::FXUtilities () { }
 
 FXUtilities::~FXUtilities () { }
 
-void FXUtilities::setup_password_first_time(string account_type, string username) {
-    string test_account_password;
-    string account_password;    
-    string password;
+void FXUtilities::setup_password_first_time(std::string account_type, std::string username) {
+    std::string test_account_password;
+    std::string account_password;    
+    std::string password;
     
-    string service_id_test = "Test_Account";
-    string service_id_live = "Live_Account";
+    std::string service_id_test = "Test_Account";
+    std::string service_id_live = "Live_Account";
 
-    string package_test = "com.gain_capital_forex.test_account";
-    string package_live = "com.gain_capital_forex.live_account";
+    std::string package_test = "com.gain_capital_forex.test_account";
+    std::string package_live = "com.gain_capital_forex.live_account";
   
     keychain::Error error = keychain::Error{};
     // Prompt Keyring Unlock
@@ -41,7 +41,7 @@ void FXUtilities::setup_password_first_time(string account_type, string username
         
         if (error.type == keychain::ErrorType::NotFound) {
             std::cout << "Test Account password not found. Please input password: ";
-            cin >> test_account_password;
+            std::cin >> test_account_password;
 
             // Test Password Setup
             keychain::setPassword(package_test, service_id_test, username, test_account_password, error);
@@ -61,7 +61,7 @@ void FXUtilities::setup_password_first_time(string account_type, string username
         
         if (error.type == keychain::ErrorType::NotFound) {
             std::cout << "Live Account password not found. Please input password: ";
-            cin >> account_password;
+            std::cin >> account_password;
 
             // Live Password Setup
             keychain::setPassword(package_live, service_id_live, username, account_password, error);
@@ -76,9 +76,9 @@ void FXUtilities::setup_password_first_time(string account_type, string username
     }
 }
 
-void FXUtilities::init_logging(string working_directory) {
-    string date = get_todays_date();
-    string file_name = working_directory + "/" + date + "_FX_Order_Management.log";
+void FXUtilities::init_logging(std::string working_directory) {
+    std::string date = get_todays_date();
+    std::string file_name = working_directory + "/" + date + "_FX_Order_Management.log";
 
     boost::log::add_file_log(        
         boost::log::keywords::file_name = file_name,                                                                   
@@ -94,7 +94,7 @@ void FXUtilities::init_logging(string working_directory) {
     boost::log::add_common_attributes();
 }
 
-string FXUtilities::get_todays_date() {
+std::string FXUtilities::get_todays_date() {
     time_t t;
     struct tm *tmp;
     char DATE_TODAY[50];

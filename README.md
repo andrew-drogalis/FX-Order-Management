@@ -48,13 +48,13 @@ Please see a link to required dependencies [below](#Dependencies). If you are in
     #include <string>
     #include <vector>
 
-    namespace std {
+    namespace fxordermgmt {
 
-    string account_username = "BLANK";
+    std::string account_username = "BLANK";
 
-    string paper_account_username = "BLANK";
+    std::string paper_account_username = "BLANK";
 
-    string forex_api_key = "BLANK";
+    std::string forex_api_key = "BLANK";
 
     // Store Passwords in Keyring.
 
@@ -72,15 +72,15 @@ Please see a link to required dependencies [below](#Dependencies). If you are in
     #include <string>
     #include <vector>
 
-    namespace std {
+    namespace fxordermgmt {
 
-    vector<string> fx_symbols_to_trade = {"USD/JPY", "EUR/USD", "USD/CHF", "USD/CAD"};
+    std::vector<std::string> fx_symbols_to_trade = {"USD/JPY", "EUR/USD", "USD/CHF", "USD/CAD"};
 
     int order_position_size = 2'000; // Lot Size
 
     int num_data_points = 10'000;
 
-    string update_interval = "MINUTE"; // MINUTE or HOUR
+    std::string update_interval = "MINUTE"; // MINUTE or HOUR
 
     int update_span = 5; // Span of Interval e.g. 5 Minutes
 
@@ -100,7 +100,7 @@ User will be prompted the first time they use the application. The password will
         
         if (error.type == keychain::ErrorType::NotFound) {
             std::cout << "Test Account password not found. Please input password: ";
-            cin >> test_account_password;
+            std::cin >> test_account_password;
 
             // Test Password Setup
             keychain::setPassword(package_test, service_id_test, paper_account_username, test_account_password, error);
@@ -126,17 +126,17 @@ Please don't run in a live trading environment with the placeholder trading mode
 #include <vector>
 #include <string>
 
-namespace std {
+namespace fxordermgmt {
 
 TradingModel::TradingModel() { }
 
-TradingModel::TradingModel(map<string, vector<float>> historical_data){
+TradingModel::TradingModel(std::map<std::string, std::vector<float>> historical_data){
 
-    vector<float> open_data = historical_data["Open"];
-    vector<float> high_data = historical_data["High"];
-    vector<float> low_data = historical_data["Low"];
-    vector<float> close_data = historical_data["Close"];
-    vector<float> datetime_data = historical_data["Datetime"];
+    std::vector<float> open_data = historical_data["Open"];
+    std::vector<float> high_data = historical_data["High"];
+    std::vector<float> low_data = historical_data["Low"];
+    std::vector<float> close_data = historical_data["Close"];
+    std::vector<float> datetime_data = historical_data["Datetime"];
 
 }
 

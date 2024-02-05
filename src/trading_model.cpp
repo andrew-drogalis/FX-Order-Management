@@ -5,23 +5,23 @@
 #include <vector>
 #include <string>
 
-namespace std {
+namespace fxordermgmt {
     
 TradingModel::TradingModel() { }
 
-TradingModel::TradingModel(map<string, vector<float>> historical_data){
+TradingModel::TradingModel(std::map<std::string, std::vector<float>> historical_data){
 
-    vector<float> open_data = historical_data["Open"];
-    vector<float> high_data = historical_data["High"];
-    vector<float> low_data = historical_data["Low"];
-    vector<float> close_data = historical_data["Close"];
-    vector<float> datetime_data = historical_data["Datetime"];
+    std::vector<float> open_data = historical_data["Open"];
+    std::vector<float> high_data = historical_data["High"];
+    std::vector<float> low_data = historical_data["Low"];
+    std::vector<float> close_data = historical_data["Close"];
+    std::vector<float> datetime_data = historical_data["Datetime"];
 
 }
 
 TradingModel::~TradingModel() { }
 
-void TradingModel::receive_latest_market_data(map<string, vector<float>> historical_data) {
+void TradingModel::receive_latest_market_data(std::map<std::string, std::vector<float>> historical_data) {
 
 }
 
