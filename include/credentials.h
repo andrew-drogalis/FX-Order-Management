@@ -10,7 +10,6 @@
 #endif
 
 #include <string>
-#include <vector>
 
 namespace fxordermgmt {
 

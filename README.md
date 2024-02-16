@@ -42,19 +42,7 @@ Please see a link to required dependencies [below](#Dependencies). If you are in
 ### Storing User Credentials
 
 ```c
-    #ifndef CREDENTIALS_H
-    #define CREDENTIALS_H
-
-    #ifndef VAR_DECLS
-    # define _DECL extern
-    # define _INIT(x)
-    #else
-    # define _DECL
-    # define _INIT(x)  = x
-    #endif
-
     #include <string>
-    #include <vector>
 
     namespace fxordermgmt {
 
@@ -67,26 +55,11 @@ Please see a link to required dependencies [below](#Dependencies). If you are in
     // Store Passwords in Keyring.
 
     }
-
-    #endif
 ```
 
 ### Updating Order Parameters
 
 ```c
-    #ifndef ORDER_PARAMETERS_H
-    #define ORDER_PARAMETERS_H
-
-    #ifndef VAR_DECLS_ORDER
-    # define _DECL extern
-    # define _INIT(x)
-    # define _INIT_VECT(...)
-    #else
-    # define _DECL
-    # define _INIT(x)  = x
-    # define _INIT_VECT(...) = {__VA_ARGS__}
-    #endif
-
     #include <string>
     #include <vector>
 
@@ -103,8 +76,6 @@ Please see a link to required dependencies [below](#Dependencies). If you are in
     _DECL int update_span _INIT(5); // Span of Interval e.g. 5 Minutes
 
     }
-
-    #endif
 ```
 
 ### Setting Password in Keyring
