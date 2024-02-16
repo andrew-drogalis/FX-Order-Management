@@ -19,10 +19,13 @@
 #include <keychain.h>
 #include <boost/log/trivial.hpp>
 
+#define VAR_DECLS
+#define VAR_DECLS_ORDER
+
 #include <fx_market_time.h>
 #include <fx_utilities.h>
 #include <trading_model.h>
-#include <private_credentials.h>
+#include <credentials.h>
 #include <order_parameters.h>
 
 namespace fxordermgmt {
