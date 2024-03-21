@@ -1,3 +1,6 @@
+// Copyright 2024, Andrew Drogalis
+// GNU License
+
 #ifndef GAIN_CAPITAL_API_H
 #define GAIN_CAPITAL_API_H
 

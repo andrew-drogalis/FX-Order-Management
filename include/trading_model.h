@@ -1,3 +1,6 @@
+// Copyright 2024, Andrew Drogalis
+// GNU License
+
 #ifndef TRADING_MODEL_H
 #define TRADING_MODEL_H
 

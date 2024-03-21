@@ -1,3 +1,6 @@
+// Copyright 2024, Andrew Drogalis
+// GNU License
+
 #ifndef FX_ORDER_MANAGEMENT_H
 #define FX_ORDER_MANAGEMENT_H
 
@@ -5,12 +8,12 @@
 #include <vector>
 #include <map>
 
-#include <gain_capital_api.h>
-#include <json.hpp>
+#include "gain_capital_api.h"
+#include "json.hpp"
 
-#include <trading_model.h>
-#include <fx_utilities.h>
-#include <fx_market_time.h>
+#include "trading_model.h"
+#include "fx_utilities.h"
+#include "fx_market_time.h"
 
 namespace fxordermgmt {
 
@@ -51,8 +54,8 @@ class FXOrderManagement {
         nlohmann::json open_positions;
 
         // Getting Price History
-        long unsigned int last_bar_timestamp;
-        long unsigned int next_bar_timestamp;
+        long unsigned int last_bar_timestamp = 0;
+        long unsigned int next_bar_timestamp = 0;
         std::vector<std::string> price_data_update_failure;
         std::map<std::string, int> price_data_update_failure_count;
         std::map<std::string, long unsigned int> price_data_update_datetime;
@@ -60,12 +63,12 @@ class FXOrderManagement {
         std::vector<std::string> live_symbols_list;
 
         // Placing Trades
-        int execution_loop_count;
+        int execution_loop_count = 0;
 
         // Output Order Information
-        float margin_total;
-        float equity_total;
-        float init_equity;
+        float margin_total = 0;
+        float equity_total = 0;
+        float init_equity = 0;
         
         // General Use
         int update_frequency_seconds;

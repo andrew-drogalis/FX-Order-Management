@@ -1,5 +1,7 @@
+// Copyright 2024, Andrew Drogalis
+// GNU License
 
-#include <fx_market_time.h>
+#include "fx_market_time.h"
 
 #include <array>
 #include <vector>
@@ -9,7 +11,7 @@
 #include <cmath>
 #include <unistd.h> 
 
-#include <fx_utilities.h>
+#include "fx_utilities.h"
 
 namespace fxordermgmt {
 

@@ -1,5 +1,7 @@
+// Copyright 2024, Andrew Drogalis
+// GNU License
 
-#include <fx_order_management.h>
+#include "fx_order_management.h"
 
 #include <iostream>
 #include <array>
@@ -14,19 +16,19 @@
 #include <format>
 #include <valarray>
 
-#include <gain_capital_api.h>
-#include <json.hpp>
-#include <keychain.h>
-#include <boost/log/trivial.hpp>
+#include "gain_capital_api.h"
+#include "json.hpp"
+#include "keychain.h"
+#include "boost/log/trivial.hpp"
 
 #define VAR_DECLS
 #define VAR_DECLS_ORDER
 
-#include <fx_market_time.h>
-#include <fx_utilities.h>
-#include <trading_model.h>
-#include <credentials.h>
-#include <order_parameters.h>
+#include "fx_market_time.h"
+#include "fx_utilities.h"
+#include "trading_model.h"
+#include "credentials.h"
+#include "order_parameters.h"
 
 namespace fxordermgmt {
 
@@ -83,21 +85,10 @@ FXOrderManagement::FXOrderManagement(std::string account, bool place_trades, int
     fx_market_time.forex_market_time_setup();
     fx_market_time.pause_till_market_open();
     // -------------------------------
-    // Maps
-    trading_model_map = {};
-    historical_data_map = {};
-    price_data_update_datetime = {};
-    price_data_update_failure_count = {};
-    position_multiplier = {};
     for (std::string symbol : fx_symbols_to_trade) { position_multiplier[symbol] = 1; }
-    // Vectors
+
     live_symbols_list = fx_symbols_to_trade;    
-    open_positions = {};
-    data_error_list = {};
-    price_data_update_failure = {};
-    // Int
-    next_bar_timestamp = 0;
-    margin_total = equity_total = init_equity = execution_loop_count = 0;
+
     // -------------------------------
     gain_capital_session();
     // -------------

@@ -1,3 +1,6 @@
+// Copyright 2024, Andrew Drogalis
+// GNU License
+
 #ifndef FX_UTILITIES_H
 #define FX_UTILITIES_H
 

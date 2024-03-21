@@ -1,3 +1,5 @@
+// Copyright 2024, Andrew Drogalis
+// GNU License
 
 #include <iostream>
 #include <filesystem>
@@ -5,7 +7,7 @@
 #include <ctime>
 #include <exception>
 
-#include <fx_order_management.h>
+#include "fx_order_management.h"
 
 int main() {
     // Set Account Type

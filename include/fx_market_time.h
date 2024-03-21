@@ -1,7 +1,10 @@
+// Copyright 2024, Andrew Drogalis
+// GNU License
+
 #ifndef FX_MARKET_TIME_H
 #define FX_MARKET_TIME_H
 
-#include <fx_utilities.h>
+#include "fx_utilities.h"
 
 namespace fxordermgmt {
 

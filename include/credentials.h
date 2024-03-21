@@ -1,3 +1,6 @@
+// Copyright 2024, Andrew Drogalis
+// GNU License
+
 #ifndef CREDENTIALS_H
 #define CREDENTIALS_H
 

@@ -1,5 +1,7 @@
+// Copyright 2024, Andrew Drogalis
+// GNU License
 
-#include <trading_model.h>
+#include "trading_model.h"
 
 #include <map>
 #include <vector>

@@ -1,3 +1,6 @@
+// Copyright 2024, Andrew Drogalis
+// GNU License
+
 #ifndef ORDER_PARAMETERS_H
 #define ORDER_PARAMETERS_H
 

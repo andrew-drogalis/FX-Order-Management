@@ -1,11 +1,17 @@
+# Vscode Extensions
 .vscode/
+.trunk/
+
 build/
+private_credentials.h
+
+# Cmake Files
 CMakeCache.txt
 CMakeFiles/
 _deps/
 Makefile
 cmake_install.cmake
-private_credentials.h
-*.log
-*.json
-FX-Order-Management*
+
+# Executables
+libgain_capital_api*
+Example
