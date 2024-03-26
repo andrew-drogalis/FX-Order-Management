@@ -16,12 +16,13 @@ class FXUtilities {
 
         ~FXUtilities();
 
-        void setup_password_first_time(std::string account_type, std::string username);
+        bool setup_password_first_time(std::string account_type, std::string username);
 
         void init_logging(std::string working_directory);
 
         std::string get_todays_date();
 
+        bool validate_user_interval(std::string update_interval, int update_span, int &update_frequency_seconds);
 };
 
 }

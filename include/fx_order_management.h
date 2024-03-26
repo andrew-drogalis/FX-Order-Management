@@ -27,19 +27,19 @@ class FXOrderManagement {
 
         FXOrderManagement(std::string account, bool place_trades, int clear_system, std::string sys_path);
 
-        void run_order_management_system();
+        bool initalize_order_management();
+
+        bool run_order_management_system();
 
     private:
-
         // Passed Through Constructor
-        bool place_trades;
-        int emergency_close;
-        std::string sys_path;
+        std::string paper_or_live = "";
+        bool place_trades = false;
+        int emergency_close = 0;
+        std::string sys_path = "";
 
         // Gain Capital Parameters
-        std::string trading_account;
-        std::string service_id;
-        std::string package;
+        std::string trading_account = "", service_id = "", package = "";
         GCapiClient session;
 
         // For Trading Indicator
@@ -54,13 +54,10 @@ class FXOrderManagement {
         nlohmann::json open_positions;
 
         // Getting Price History
-        long unsigned int last_bar_timestamp = 0;
-        long unsigned int next_bar_timestamp = 0;
-        std::vector<std::string> price_data_update_failure;
+        long unsigned int last_bar_timestamp = 0, next_bar_timestamp = 0;
+        std::vector<std::string> price_data_update_failure, data_error_list, live_symbols_list;
         std::map<std::string, int> price_data_update_failure_count;
         std::map<std::string, long unsigned int> price_data_update_datetime;
-        std::vector<std::string> data_error_list;
-        std::vector<std::string> live_symbols_list;
 
         // Placing Trades
         int execution_loop_count = 0;
@@ -71,15 +68,27 @@ class FXOrderManagement {
         float init_equity = 0;
         
         // General Use
-        int update_frequency_seconds;
+        int update_frequency_seconds = 0;
         FXUtilities fx_utilities = FXUtilities();
         FXMarketTime fx_market_time;
 
-        void gain_capital_session();
+        // ==============================================================================================
+        // Gain Capital API
+        // ==============================================================================================
+
+        bool gain_capital_session();
+
+        // ==============================================================================================
+        // Trading Model
+        // ==============================================================================================
 
         void initalize_trading_model(std::string symbol);
 
         void get_trading_model_signal();
+
+        // ==============================================================================================
+        // Forex Order Management
+        // ==============================================================================================
 
         void build_trades_map();
 
@@ -94,6 +103,10 @@ class FXOrderManagement {
         void execute_signals(nlohmann::json trade_dict);
 
         void verify_trades_opened(nlohmann::json trade_dict);
+
+        // ==============================================================================================
+        // Forex Order File I/O
+        // ==============================================================================================
 
         void read_input_information();
 

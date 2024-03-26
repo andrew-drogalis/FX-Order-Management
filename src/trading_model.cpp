@@ -3,7 +3,7 @@
 
 #include "trading_model.h"
 
-#include <map>
+#include <unordered_map>
 #include <vector>
 #include <string>
 
@@ -11,7 +11,9 @@ namespace fxordermgmt {
     
 TradingModel::TradingModel() { }
 
-TradingModel::TradingModel(std::map<std::string, std::vector<float>> historical_data){
+TradingModel::~TradingModel() { }
+
+TradingModel::TradingModel(std::unordered_map<std::string, std::vector<float>> historical_data){
 
     std::vector<float> open_data = historical_data["Open"];
     std::vector<float> high_data = historical_data["High"];
@@ -21,10 +23,8 @@ TradingModel::TradingModel(std::map<std::string, std::vector<float>> historical_
 
 }
 
-TradingModel::~TradingModel() { }
-
-void TradingModel::receive_latest_market_data(std::map<std::string, std::vector<float>> historical_data) {
-
+void TradingModel::receive_latest_market_data(std::unordered_map<std::string, std::vector<float>> historical_data) {
+    // User Defined Trading Model
 }
 
 int TradingModel::send_trading_signal(){
@@ -36,5 +36,5 @@ int TradingModel::send_trading_signal(){
     return signal;
 }
 
-}
+} // namespace fxordermgmt
 

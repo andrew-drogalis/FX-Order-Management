@@ -85,7 +85,7 @@ bool FXMarketTime::forex_market_exit_only() {
     } else { return true; } 
 }
 
-void FXMarketTime::pause_till_market_open() {
+bool FXMarketTime::pause_till_market_open() {
     bool market_is_closed = market_closed();
     bool forex_is_exit_only = forex_market_exit_only();
     if (!market_is_closed && forex_is_exit_only) {
@@ -102,8 +102,9 @@ void FXMarketTime::pause_till_market_open() {
 
     if (!will_market_be_open_tomorrow) {
         std::cout << "Market is Closed Today; Weekend Approaching; Terminating Program" << std::endl;
-        std::terminate();
+        return false;
     }
+    return true;
 }
 
 }

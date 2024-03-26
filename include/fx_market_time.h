@@ -24,7 +24,7 @@ class FXMarketTime {
 
         bool forex_market_exit_only();
         
-        void pause_till_market_open();
+        bool pause_till_market_open();
 
     private:
         // Forex Time 

@@ -9,31 +9,40 @@
 
 #include "fx_order_management.h"
 
-int main() {
-    // Set Account Type
-    std::string ACCOUNT = "PAPER"; 
-    bool PLACE_TRADES = true; 
-    int EMERGENCY_CLOSE = 0;
-
-    if (ACCOUNT != "PAPER" && ACCOUNT != "LIVE") {
+constexpr bool validateAccountType(std::string account) {
+    if (account != "PAPER" && account != "LIVE") {
         std::cerr << "Wrong Account Type; Please Select 'PAPER' or 'LIVE'" << std::endl;
-        std::terminate();
+        return false;
     }
     else {
-        std::cout << "Account Type Initialized: " << ACCOUNT << "\n" << std::endl;
+        std::cout << "Account Type Initialized: " << account << "\n" << std::endl;
+        return true;
     }
+}
 
-    // Check if Emergency Scenario
+void userInputEmergencyClose(int &emergencyClose) {
     while (true) {
         std::cout << "Close All Open Positions?\n\nPlease Enter: 1 = True; 0 = False;\n\nYour Selection: ";
-        std::cin >> EMERGENCY_CLOSE;
+        std::cin >> emergencyClose;
         std::cout << std::endl;
 
-        if (EMERGENCY_CLOSE == 1 || EMERGENCY_CLOSE == 0) { break;}
+        if (emergencyClose == 1 ||emergencyClose == 0) { break; }
         else {
             std::cout << "Wrong Input\n";
         }
     }
+}
+
+int main() {
+    // =============================================================
+    // USER INPUT
+    // =============================================================
+    std::string ACCOUNT = "PAPER"; 
+    bool PLACE_TRADES = true; 
+    int EMERGENCY_CLOSE = 0;
+
+    if (!validateAccountType(ACCOUNT)) { return 1; }
+    userInputEmergencyClose(EMERGENCY_CLOSE);
 
     // Set Logging Parameters
     std::string working_directory = std::filesystem::current_path();
@@ -41,9 +50,10 @@ int main() {
     // Initalize Order Management
     fxordermgmt::FXOrderManagement fx = fxordermgmt::FXOrderManagement(ACCOUNT, PLACE_TRADES, EMERGENCY_CLOSE, working_directory);
 
-    if (EMERGENCY_CLOSE == 0) {
-        fx.run_order_management_system();
-    }
+    if (!fx.initalize_order_management()) { return 1; }
+
+    bool success = fx.run_order_management_system();
+    if (!success) { return 1; }
 
     time_t end_time = time(NULL);
     std::cout << "FX Order Management - Program Terminated Successfully: " << ctime(&end_time) << std::endl;

@@ -4,7 +4,7 @@
 #ifndef TRADING_MODEL_H
 #define TRADING_MODEL_H
 
-#include <map>
+#include <unordered_map>
 #include <vector>
 #include <string>
 
@@ -16,16 +16,16 @@ class TradingModel {
 
         TradingModel();
 
-        TradingModel(std::map<std::string, std::vector<float>> historical_data);
-
         ~TradingModel();
+
+        TradingModel(std::unordered_map<std::string, std::vector<float>> historical_data);
 
         int send_trading_signal();
 
-        void receive_latest_market_data(std::map<std::string, std::vector<float>> historical_data);
+        void receive_latest_market_data(std::unordered_map<std::string, std::vector<float>> historical_data);
 
 };
 
-}
+} // namespace fxordermgmt
 
 #endif
