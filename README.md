@@ -95,11 +95,11 @@ User will be prompted the first time they use the application. The password will
             keychain::setPassword(package_test, service_id_test, paper_account_username, test_account_password, error);
             if (error) {
                 std::cerr << "Test Account " << error.message << std::endl;
-                std::terminate();
+                return false;
             }
         } else if (error) {
             std::cerr << error.message << std::endl;
-            std::terminate();
+            return false;
         }
     }
 ```
@@ -111,7 +111,7 @@ Please don't run in a live trading environment with the placeholder trading mode
 ```c
 #include <trading_model.h>
 
-#include <map>
+#include <unordered_map>
 #include <vector>
 #include <string>
 
@@ -119,7 +119,9 @@ namespace fxordermgmt {
 
 TradingModel::TradingModel() { }
 
-TradingModel::TradingModel(std::map<std::string, std::vector<float>> historical_data){
+TradingModel::~TradingModel() { }
+
+TradingModel::TradingModel(std::unordered_map<std::string, std::vector<float>> historical_data){
 
     std::vector<float> open_data = historical_data["Open"];
     std::vector<float> high_data = historical_data["High"];
@@ -129,10 +131,8 @@ TradingModel::TradingModel(std::map<std::string, std::vector<float>> historical_
 
 }
 
-TradingModel::~TradingModel() { }
-
-void TradingModel::receive_latest_market_data(map<string, vector<float>> historical_data) {
-
+void TradingModel::receive_latest_market_data(std::unordered_map<string, vector<float>> historical_data) {
+    // User Defined Trading Model
 }
 
 int TradingModel::send_trading_signal(){
@@ -144,7 +144,7 @@ int TradingModel::send_trading_signal(){
     return signal;
 }
 
-}
+} // namespace fxordermgmt
 ```
 
 ### Switch to Live Trading
@@ -152,10 +152,13 @@ int TradingModel::send_trading_signal(){
 The default is paper trading, switch to live account and set place trades to true.
 
 ```c
-int main() {
-    // Set Account Type
-    string ACCOUNT = "PAPER"; 
-    bool PLACE_TRADES = false; 
+int main(int argc, char* argv[]) {
+    // =============================================================
+    // USER INPUT DEFAULTS
+    // =============================================================
+    std::string ACCOUNT = "PAPER"; 
+    bool PLACE_TRADES = true; 
+    int EMERGENCY_CLOSE = 0;
 ```
 
 ### Profitability Reports
