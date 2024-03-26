@@ -11,11 +11,11 @@
 
 constexpr bool validateAccountType(std::string account) {
     if (account != "PAPER" && account != "LIVE") {
-        std::cerr << "Wrong Account Type; Please Select 'PAPER' or 'LIVE'" << std::endl;
+        std::cerr << "Wrong Account Type; Please Select 'PAPER' or 'LIVE'" << '\n';
         return false;
     }
     else {
-        std::cout << "Account Type Initialized: " << account << "\n" << std::endl;
+        std::cout << "Account Type Initialized: " << account << "\n\n";
         return true;
     }
 }
@@ -24,22 +24,32 @@ void userInputEmergencyClose(int &emergencyClose) {
     while (true) {
         std::cout << "Close All Open Positions?\n\nPlease Enter: 1 = True; 0 = False;\n\nYour Selection: ";
         std::cin >> emergencyClose;
-        std::cout << std::endl;
+        std::cout << '\n';
 
-        if (emergencyClose == 1 ||emergencyClose == 0) { break; }
-        else {
-            std::cout << "Wrong Input\n";
-        }
+        if (emergencyClose == 1 || emergencyClose == 0) { break; }
+        else { std::cout << "Wrong Input\n"; }
     }
 }
 
-int main() {
+int main(int argc, char* argv[]) {
     // =============================================================
-    // USER INPUT
+    // USER INPUT DEFAULTS
     // =============================================================
     std::string ACCOUNT = "PAPER"; 
     bool PLACE_TRADES = true; 
     int EMERGENCY_CLOSE = 0;
+
+    if (argc == 2) {
+        ACCOUNT = argv[1];
+    }
+    else if (argc == 3) {
+        ACCOUNT = argv[1];
+        PLACE_TRADES = 0;
+    } 
+    else if (argc > 3) {
+        std::cerr << "Too many arguements" << '\n';
+        return 1;
+    }
 
     if (!validateAccountType(ACCOUNT)) { return 1; }
     userInputEmergencyClose(EMERGENCY_CLOSE);
@@ -56,7 +66,7 @@ int main() {
     if (!success) { return 1; }
 
     time_t end_time = time(NULL);
-    std::cout << "FX Order Management - Program Terminated Successfully: " << ctime(&end_time) << std::endl;
+    std::cout << "FX Order Management - Program Terminated Successfully: " << ctime(&end_time) << '\n';
 
     return 0;
 }
