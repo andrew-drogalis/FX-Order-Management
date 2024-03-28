@@ -24,7 +24,7 @@ This repository is dependent upon the API from Gain Capital's Forex.com. To make
 
 ### Downloading Dependencies
 
-Please see a link to required dependencies [below](#Dependencies). If you are in Linux, Boost & OpenSSL & libsecret can be installed with the following commands below. Since this repository has been built and tested on a Linux system, please open up an issue if there are any conflicts with Windows or Mac OS.
+Please see a link to required dependencies [below](#Dependencies). If you are in Linux, Boost & OpenSSL & libsecret can be installed with the following commands below.
 
 ```
     Fedora:
