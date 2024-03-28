@@ -17,7 +17,7 @@ namespace fxordermgmt {
 
 FXMarketTime::FXMarketTime() { }
 
-FXMarketTime::FXMarketTime(int update_frequency_seconds) : update_frequency_seconds(update_frequency_seconds) { }
+FXMarketTime::FXMarketTime(int update_frequency_seconds, FXUtilities fx_utilities) : update_frequency_seconds(update_frequency_seconds), fx_utilities(fx_utilities) { }
 
 FXMarketTime::~FXMarketTime() { }
 
@@ -28,8 +28,7 @@ void FXMarketTime::forex_market_time_setup() {
     int end_hr = 20;
     // ----------------------------------------
     time_t now = time(0);
-    struct tm *now_local;
-    now_local = localtime(&now);
+    struct tm *now_local = localtime(&now);
     std::string date = fx_utilities.get_todays_date();
     int day_of_week = now_local->tm_wday;
 
@@ -41,7 +40,7 @@ void FXMarketTime::forex_market_time_setup() {
     start_hr += offset; 
     end_hr += offset;
     // ----------------------------------------
-    // Must Be Updated as Required
+    // Holidays Must Be Updated as Required
     std::vector<std::string> holidays = {"2024_01_01","2024_01_15","2024_02_19","2024_03_29","2024_05_27","2024_06_19","2024_07_04","2024_09_02","2024_11_28","2024_11_29","2024_12_24","2024_12_25"};
     std::vector<int> days_of_week_to_trade = {6, 0, 1, 2, 3, 4};
 
@@ -73,33 +72,28 @@ void FXMarketTime::forex_market_time_setup() {
 
 bool FXMarketTime::market_closed() {
     unsigned int time_now = (std::chrono::system_clock::now().time_since_epoch()).count() * std::chrono::system_clock::period::num / std::chrono::system_clock::period::den;
-    if (market_close_time-1 < time_now && time_now < market_close_time+update_frequency_seconds+60) {
-        return true;
-    } else { return false; }    
+    if (market_close_time-1 < time_now && time_now < market_close_time+update_frequency_seconds+60) { return true; }
+    else { return false; }    
 }
 
 bool FXMarketTime::forex_market_exit_only() {
     unsigned int time_now = (std::chrono::system_clock::now().time_since_epoch()).count() * std::chrono::system_clock::period::num / std::chrono::system_clock::period::den;
-    if (FX_market_start <= time_now && time_now <= FX_market_end) {
-        return false;
-    } else { return true; } 
+    if (FX_market_start <= time_now && time_now <= FX_market_end) { return false; }
+    else { return true; } 
 }
 
 bool FXMarketTime::pause_till_market_open() {
     bool market_is_closed = market_closed();
     bool forex_is_exit_only = forex_market_exit_only();
+
     if (!market_is_closed && forex_is_exit_only) {
-        
         float time_to_wait_now = FX_market_start - (std::chrono::system_clock::now().time_since_epoch()).count() * std::chrono::system_clock::period::num / std::chrono::system_clock::period::den;
-
+        // Outpuit Status Message
         std::cout << "Market Closed Today; Waiting for Tomorrow; Will be waiting for " << round(time_to_wait_now / 36) / 100 << " Hours..." << std::endl;
-
         // Pause Until Market Open
-        if (time_to_wait_now > 0) { 
-            sleep(time_to_wait_now);
-        } else { will_market_be_open_tomorrow = false; }   
+        if (time_to_wait_now > 0) { sleep(time_to_wait_now); }
+        else { will_market_be_open_tomorrow = false; }   
     }  
-
     if (!will_market_be_open_tomorrow) {
         std::cout << "Market is Closed Today; Weekend Approaching; Terminating Program" << std::endl;
         return false;

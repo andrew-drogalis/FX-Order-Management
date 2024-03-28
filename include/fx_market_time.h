@@ -14,7 +14,7 @@ class FXMarketTime {
 
         FXMarketTime();
 
-        FXMarketTime(int update_frequency_seconds);
+        FXMarketTime(int update_frequency_seconds, FXUtilities fx_utilities);
 
         ~FXMarketTime();
 
@@ -28,14 +28,12 @@ class FXMarketTime {
 
     private:
         // Forex Time 
-        long unsigned int FX_market_start;
-        long unsigned int FX_market_end;
-        long unsigned int market_close_time;
-        int update_frequency_seconds;
-        bool will_market_be_open_tomorrow;
-
-        FXUtilities fx_utilities = FXUtilities();
-
+        long unsigned int FX_market_start = 0;
+        long unsigned int FX_market_end = 0;
+        long unsigned int market_close_time = 0;
+        int update_frequency_seconds = 0;
+        bool will_market_be_open_tomorrow = false;
+        FXUtilities fx_utilities;
 };
 
 }

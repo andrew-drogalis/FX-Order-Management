@@ -122,25 +122,25 @@ TradingModel::TradingModel() { }
 TradingModel::~TradingModel() { }
 
 TradingModel::TradingModel(std::unordered_map<std::string, std::vector<float>> historical_data){
-
-    std::vector<float> open_data = historical_data["Open"];
-    std::vector<float> high_data = historical_data["High"];
-    std::vector<float> low_data = historical_data["Low"];
-    std::vector<float> close_data = historical_data["Close"];
-    std::vector<float> datetime_data = historical_data["Datetime"];
-
+    open_data = historical_data["Open"];
+    high_data = historical_data["High"];
+    low_data = historical_data["Low"];
+    close_data = historical_data["Close"];
+    datetime_data = historical_data["Datetime"];
 }
 
 void TradingModel::receive_latest_market_data(std::unordered_map<string, vector<float>> historical_data) {
     // User Defined Trading Model
+    open_data = historical_data["Open"];
+    high_data = historical_data["High"];
+    low_data = historical_data["Low"];
+    close_data = historical_data["Close"];
+    datetime_data = historical_data["Datetime"];
 }
 
 int TradingModel::send_trading_signal(){
-
     float signal = ((double) rand() / (RAND_MAX));
-
     signal = (signal > 0.5) ? 1 : -1;
-
     return signal;
 }
 

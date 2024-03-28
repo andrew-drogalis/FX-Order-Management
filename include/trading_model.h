@@ -24,6 +24,12 @@ class TradingModel {
 
         void receive_latest_market_data(std::unordered_map<std::string, std::vector<float>> historical_data);
 
+    private:
+        std::vector<float> open_data;
+        std::vector<float> high_data;
+        std::vector<float> low_data;
+        std::vector<float> close_data;
+        std::vector<float> datetime_data;
 };
 
 } // namespace fxordermgmt

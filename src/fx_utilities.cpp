@@ -21,7 +21,6 @@ FXUtilities::~FXUtilities () { }
 bool FXUtilities::setup_password_first_time(std::string account_type, std::string username) {
     std::string service_id_test = "Test_Account", service_id_live = "Live_Account", package_test = "com.gain_capital_forex.test_account", package_live = "com.gain_capital_forex.live_account";
     std::string test_account_password, account_password, password;
-  
     keychain::Error error = keychain::Error{};
     // Prompt Keyring Unlock
     keychain::setPassword("Forex_Keychain_Unlocker", "", "", "", error);
@@ -37,7 +36,6 @@ bool FXUtilities::setup_password_first_time(std::string account_type, std::strin
         if (error.type == keychain::ErrorType::NotFound) {
             std::cout << "Test Account password not found. Please input password: ";
             std::cin >> test_account_password;
-
             // Test Password Setup
             keychain::setPassword(package_test, service_id_test, username, test_account_password, error);
             if (error) {
@@ -53,11 +51,10 @@ bool FXUtilities::setup_password_first_time(std::string account_type, std::strin
     if (account_type == "LIVE") {
         error = keychain::Error{};
         password = keychain::getPassword(package_live, service_id_live, username, error);
-        
+
         if (error.type == keychain::ErrorType::NotFound) {
             std::cout << "Live Account password not found. Please input password: ";
             std::cin >> account_password;
-
             // Live Password Setup
             keychain::setPassword(package_live, service_id_live, username, account_password, error);
             if (error) {
@@ -75,28 +72,21 @@ bool FXUtilities::setup_password_first_time(std::string account_type, std::strin
 void FXUtilities::init_logging(std::string working_directory) {
     std::string date = get_todays_date();
     std::string file_name = working_directory + "/" + date + "_FX_Order_Management.log";
-
     boost::log::add_file_log(        
         boost::log::keywords::file_name = file_name,                                                                   
         boost::log::keywords::format = "[%TimeStamp%]: %Message%",
         boost::log::keywords::auto_flush = true
     );
-
-    boost::log::core::get()->set_filter(
-        boost::log::trivial::severity >= boost::log::trivial::debug
-    );
+    boost::log::core::get()->set_filter( boost::log::trivial::severity >= boost::log::trivial::debug );
     boost::log::add_common_attributes();
 }
 
 std::string FXUtilities::get_todays_date() {
     time_t t;
-    struct tm *tmp;
     char DATE_TODAY[50];
     time( &t );
-    tmp = localtime( &t );
-     
+    struct tm *tmp = localtime( &t );
     strftime(DATE_TODAY, sizeof(DATE_TODAY), "%Y_%m_%d", tmp);
-
     return DATE_TODAY;
 }
 
@@ -112,7 +102,6 @@ bool FXUtilities::validate_user_interval(std::string update_interval, int update
         std::cerr << "Interval Error - Provide one of the following intervals: 'HOUR', 'MINUTE'" << std::endl;
         return false;
     }
-
     if (update_interval == "HOUR") {
         if (std::find(SPAN_H.begin(), SPAN_H.end(), update_span) == SPAN_H.end()) {
             std::cerr << "Span Hour Error - Provide one of the following spans: 1, 2, 4, 8" << std::endl;

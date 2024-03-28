@@ -69,7 +69,7 @@ class FXOrderManagement {
         
         // General Use
         int update_frequency_seconds = 0;
-        FXUtilities fx_utilities = FXUtilities();
+        FXUtilities fx_utilities;
         FXMarketTime fx_market_time;
 
         // ==============================================================================================
@@ -111,7 +111,6 @@ class FXOrderManagement {
         void read_input_information();
 
         void output_order_information();
-
 };
 
 }
