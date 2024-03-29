@@ -90,7 +90,6 @@ User will be prompted the first time they use the application. The password will
         if (error.type == keychain::ErrorType::NotFound) {
             std::cout << "Test Account password not found. Please input password: ";
             std::cin >> test_account_password;
-
             // Test Password Setup
             keychain::setPassword(package_test, service_id_test, paper_account_username, test_account_password, error);
             if (error) {
