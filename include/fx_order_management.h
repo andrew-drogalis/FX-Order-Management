@@ -6,10 +6,10 @@
 
 #include <string>
 #include <vector>
-#include <map>
+#include <unordered_map>
 
-#include "gain_capital_api.h"
-#include "json.hpp"
+#include "gain_capital_api/gain_capital_api.h"
+#include "json/json.hpp"
 
 #include "trading_model.h"
 #include "fx_utilities.h"
@@ -40,24 +40,24 @@ class FXOrderManagement {
 
         // Gain Capital Parameters
         std::string trading_account = "", service_id = "", package = "";
-        GCapiClient session;
+        gaincapital::GCapiClient session;
 
         // For Trading Indicator
-        std::map<std::string, int> main_signals;
-        std::map<std::string, TradingModel> trading_model_map;
-        std::map<std::string, std::map<std::string,std::vector<float>>> historical_data_map;
+        std::unordered_map<std::string, int> main_signals;
+        std::unordered_map<std::string, TradingModel> trading_model_map;
+        std::unordered_map<std::string, std::unordered_map<std::string,std::vector<float>>> historical_data_map;
 
         // Build Trades Map
-        std::map<std::string, std::map<std::string, std::string>> trades_map;
-        std::map<std::string, int> position_multiplier;
+        std::unordered_map<std::string, std::unordered_map<std::string, std::string>> trades_map;
+        std::unordered_map<std::string, int> position_multiplier;
         std::vector<std::string> execute_list;
         nlohmann::json open_positions;
 
         // Getting Price History
         long unsigned int last_bar_timestamp = 0, next_bar_timestamp = 0;
         std::vector<std::string> price_data_update_failure, data_error_list, live_symbols_list;
-        std::map<std::string, int> price_data_update_failure_count;
-        std::map<std::string, long unsigned int> price_data_update_datetime;
+        std::unordered_map<std::string, int> price_data_update_failure_count;
+        std::unordered_map<std::string, long unsigned int> price_data_update_datetime;
 
         // Placing Trades
         int execution_loop_count = 0;
@@ -98,7 +98,7 @@ class FXOrderManagement {
 
         void return_price_history(std::vector<std::string> symbols_list);        
 
-        void pause_next_bar();
+        bool pause_next_bar();
 
         void execute_signals(nlohmann::json trade_dict);
 
@@ -108,9 +108,9 @@ class FXOrderManagement {
         // Forex Order File I/O
         // ==============================================================================================
 
-        void read_input_information();
+        bool read_input_information();
 
-        void output_order_information();
+        bool output_order_information();
 };
 
 }

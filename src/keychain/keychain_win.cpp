@@ -25,7 +25,7 @@
 
 // clang-format off
 // make sure windows.h is included before wincred.h
-#include "keychain.h"
+#include "keychain/keychain.h"
 
 #include <memory>
 

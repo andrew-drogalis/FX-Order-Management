@@ -9,7 +9,7 @@
 
 #include "fx_order_management.h"
 
-constexpr bool validateAccountType(std::string &account) {
+bool validateAccountType(std::string &account) {
     transform(account.begin(), account.end(), account.begin(), ::toupper);
     if (account != "PAPER" && account != "LIVE") {
         std::cerr << "Wrong Account Type; Please Select 'PAPER' or 'LIVE'" << '\n';

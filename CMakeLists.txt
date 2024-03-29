@@ -30,6 +30,7 @@ include(cmake/StaticAnalyzers.cmake)
 include(cmake/Tests.cmake)
 include(cmake/Hardening.cmake)
 include(cmake/PreventInSourceBuilds.cmake)
+include(cmake/ClangFormat.cmake)
 
 myproject_assure_out_of_source_builds()
 myproject_set_project_warnings(${PROJECT_NAME} TRUE "X" "" "" "X")
@@ -38,6 +39,7 @@ myproject_enable_hardening(${PROJECT_NAME} TRUE FALSE)
 #myproject_enable_cppcheck(True "X")
 #myproject_enable_clang_tidy(${PROJECT_NAME} TRUE)
 #myproject_enable_include_what_you_use()
+#add_clang_format_target(RUN_CLANG-FORMAT ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_compile_options(-pipe -fPIC)
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -63,13 +65,12 @@ include_directories( ${Boost_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 
 add_library( gain_capital_api SHARED IMPORTED )
 
-set_target_properties( gain_capital_api PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/lib/libgain_capital_api.so.1.2.0 )
+set_target_properties( gain_capital_api PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/lib/libgain_capital_api.so.1.0.0 )
 
 target_link_libraries(${PROJECT_NAME} LINK_PUBLIC ${Boost_LIBRARIES} gain_capital_api)
 
 # For KeyChain 
 if (WIN32)
-
     target_sources(${PROJECT_NAME}
         PRIVATE
             "src/keychain/keychain_win.cpp")
@@ -78,7 +79,6 @@ if (WIN32)
         PRIVATE
             crypt32)
 elseif (APPLE)
-
     target_sources(${PROJECT_NAME}
         PRIVATE
             "src/keychain/keychain_mac.cpp")
@@ -91,7 +91,6 @@ elseif (APPLE)
             ${COREFOUNDATION_LIBRARY}
             ${SECURITY_LIBRARY})
 else () # assuming Linux
-
     target_sources(${PROJECT_NAME}
         PRIVATE
             "src/keychain/keychain_linux.cpp")

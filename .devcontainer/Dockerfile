@@ -28,8 +28,7 @@ RUN dnf -y install \
         abseil-cpp
 
 RUN dnf -y install \
-        lcov \
-        gcovr \
+        clang-tools-extra \
         gtest-devel \
         gmock-devel \
         doxygen \
@@ -40,7 +39,7 @@ RUN dnf -y install \
 RUN dnf -y install \
         openssl-devel libsecret-devel
     
-RUN pip install conan lizard cmakelang codespell && \
+RUN pip install conan lizard cmakelang codespell gcovr && \
         dnf clean all && \
         rm -rf /var/cache/dnf
 

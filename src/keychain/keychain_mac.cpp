@@ -27,7 +27,7 @@
 
 #include <Security/Security.h>
 
-#include "keychain.h"
+#include "keychain/keychain.h"
 
 namespace {
 /*! \brief Converts a CFString to a std::string

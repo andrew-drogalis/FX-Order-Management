@@ -24,7 +24,7 @@
  *
  */
 
-#include "keychain.h"
+#include "keychain/keychain.h"
 
 #include <libsecret/secret.h>
 
