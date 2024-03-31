@@ -16,6 +16,8 @@
 namespace fxordermgmt
 {
 
+namespace ch = std::chrono;
+
 FXMarketTime::FXMarketTime() {}
 
 FXMarketTime::FXMarketTime(int update_frequency_seconds, FXUtilities fx_utilities)
@@ -37,8 +39,8 @@ void FXMarketTime::forex_market_time_setup()
     std::string date = fx_utilities.get_todays_date();
     int day_of_week = now_local->tm_wday;
 
-    std::chrono::zoned_time local_time = std::chrono::zoned_time {std::chrono::current_zone(), std::chrono::system_clock::now()};
-    std::chrono::zoned_time london_time = std::chrono::zoned_time {"Europe/London", std::chrono::system_clock::now()};
+    ch::zoned_time local_time = ch::zoned_time {ch::current_zone(), ch::system_clock::now()};
+    ch::zoned_time london_time = ch::zoned_time {"Europe/London", ch::system_clock::now()};
     // --------
     int offset = (std::stoi(std::format("{:%z}", local_time)) - std::stoi(std::format("{:%z}", london_time))) / 100;
     int offset_seconds = -offset * 3600;
@@ -55,32 +57,22 @@ void FXMarketTime::forex_market_time_setup()
         std::find(holidays.begin(), holidays.end(), date) == holidays.end())
     {
         will_market_be_open_tomorrow = true;
-        std::chrono::time_point time_now = std::chrono::system_clock::now();
+        ch::time_point time_now = ch::system_clock::now();
 
         if ((std::stoi(std::format("{:%H}", local_time)) < end_hr || day_of_week == 4) && day_of_week != 6)
         {
-            FX_market_start = ((std::chrono::floor<std::chrono::days>(time_now) + std::chrono::hours {start_hr}).time_since_epoch()).count() * 3600 +
-                              offset_seconds;
+            FX_market_start = ((ch::floor<ch::days>(time_now) + ch::hours {start_hr}).time_since_epoch()).count() * 3600 + offset_seconds;
             FX_market_end =
-                ((std::chrono::floor<std::chrono::days>(time_now) + std::chrono::hours {end_hr - 1} + std::chrono::minutes {58}).time_since_epoch())
-                        .count() *
-                    60 +
-                offset_seconds;
-            market_close_time =
-                ((std::chrono::floor<std::chrono::days>(time_now) + std::chrono::hours {end_hr}).time_since_epoch()).count() * 3600 + offset_seconds;
+                ((ch::floor<ch::days>(time_now) + ch::hours {end_hr - 1} + ch::minutes {58}).time_since_epoch()).count() * 60 + offset_seconds;
+            market_close_time = ((ch::floor<ch::days>(time_now) + ch::hours {end_hr}).time_since_epoch()).count() * 3600 + offset_seconds;
         }
         else
         {
-            time_now += std::chrono::days {1};
-            FX_market_start = ((std::chrono::floor<std::chrono::days>(time_now) + std::chrono::hours {start_hr}).time_since_epoch()).count() * 3600 +
-                              offset_seconds;
+            time_now += ch::days {1};
+            FX_market_start = ((ch::floor<ch::days>(time_now) + ch::hours {start_hr}).time_since_epoch()).count() * 3600 + offset_seconds;
             FX_market_end =
-                ((std::chrono::floor<std::chrono::days>(time_now) + std::chrono::hours {end_hr - 1} + std::chrono::minutes {58}).time_since_epoch())
-                        .count() *
-                    60 +
-                offset_seconds;
-            market_close_time =
-                ((std::chrono::floor<std::chrono::days>(time_now) + std::chrono::hours {end_hr}).time_since_epoch()).count() * 3600 + offset_seconds;
+                ((ch::floor<ch::days>(time_now) + ch::hours {end_hr - 1} + ch::minutes {58}).time_since_epoch()).count() * 60 + offset_seconds;
+            market_close_time = ((ch::floor<ch::days>(time_now) + ch::hours {end_hr}).time_since_epoch()).count() * 3600 + offset_seconds;
         }
     }
     // Market Closed
@@ -88,27 +80,21 @@ void FXMarketTime::forex_market_time_setup()
     {
         will_market_be_open_tomorrow = false;
         FX_market_start = 0;
-        FX_market_end = (std::chrono::system_clock::now().time_since_epoch()).count() * std::chrono::system_clock::period::num /
-                            std::chrono::system_clock::period::den -
-                        1;
-        market_close_time = (std::chrono::system_clock::now().time_since_epoch()).count() * std::chrono::system_clock::period::num /
-                                std::chrono::system_clock::period::den -
-                            1;
+        FX_market_end = (ch::system_clock::now().time_since_epoch()).count() * ch::system_clock::period::num / ch::system_clock::period::den - 1;
+        market_close_time = (ch::system_clock::now().time_since_epoch()).count() * ch::system_clock::period::num / ch::system_clock::period::den - 1;
     }
 }
 
 bool FXMarketTime::market_closed()
 {
-    unsigned int time_now = (std::chrono::system_clock::now().time_since_epoch()).count() * std::chrono::system_clock::period::num /
-                            std::chrono::system_clock::period::den;
+    unsigned int time_now = (ch::system_clock::now().time_since_epoch()).count() * ch::system_clock::period::num / ch::system_clock::period::den;
     if (market_close_time - 1 < time_now && time_now < market_close_time + update_frequency_seconds + 60) { return true; }
     else { return false; }
 }
 
 bool FXMarketTime::forex_market_exit_only()
 {
-    unsigned int time_now = (std::chrono::system_clock::now().time_since_epoch()).count() * std::chrono::system_clock::period::num /
-                            std::chrono::system_clock::period::den;
+    unsigned int time_now = (ch::system_clock::now().time_since_epoch()).count() * ch::system_clock::period::num / ch::system_clock::period::den;
     if (FX_market_start <= time_now && time_now <= FX_market_end) { return false; }
     else { return true; }
 }
@@ -120,8 +106,8 @@ bool FXMarketTime::pause_till_market_open()
 
     if (! market_is_closed && forex_is_exit_only)
     {
-        float time_to_wait_now = FX_market_start - (std::chrono::system_clock::now().time_since_epoch()).count() *
-                                                       std::chrono::system_clock::period::num / std::chrono::system_clock::period::den;
+        float time_to_wait_now =
+            FX_market_start - (ch::system_clock::now().time_since_epoch()).count() * ch::system_clock::period::num / ch::system_clock::period::den;
         // Outpuit Status Message
         std::cout << "Market Closed Today; Waiting for Tomorrow; Will be waiting for " << round(time_to_wait_now / 36) / 100 << " Hours..."
                   << std::endl;
