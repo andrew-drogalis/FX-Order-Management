@@ -5,16 +5,17 @@
 #define CREDENTIALS_H
 
 #ifndef VAR_DECLS
-# define _DECL extern
-# define _INIT(x)
+#define _DECL extern
+#define _INIT(x)
 #else
-# define _DECL
-# define _INIT(x)  = x
+#define _DECL
+#define _INIT(x) = x
 #endif
 
 #include <string>
 
-namespace fxordermgmt {
+namespace fxordermgmt
+{
 
 _DECL std::string account_username _INIT("BLANK");
 
@@ -24,6 +25,6 @@ _DECL std::string forex_api_key _INIT("BLANK");
 
 // Store Passwords in Keyring.
 
-}
+}// namespace fxordermgmt
 
 #endif

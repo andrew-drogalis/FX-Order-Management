@@ -3,6 +3,7 @@ function(add_clang_format_target TARGET_NAME SOURCE_DIR)
   # Find all C++ source files in the directory
   file(GLOB FORMAT_SOURCES
        LIST_DIRECTORIES false
+       "${SOURCE_DIR}/main.cpp"
        "${SOURCE_DIR}/src/*.cpp"
        "${SOURCE_DIR}/include/*.h"
   )

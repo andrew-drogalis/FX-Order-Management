@@ -3,17 +3,19 @@
 
 #include "trading_model.h"
 
+#include <string>
 #include <unordered_map>
 #include <vector>
-#include <string>
 
-namespace fxordermgmt {
-    
-TradingModel::TradingModel() { }
+namespace fxordermgmt
+{
 
-TradingModel::~TradingModel() { }
+TradingModel::TradingModel() {}
 
-TradingModel::TradingModel(std::unordered_map<std::string, std::vector<float>> historical_data){
+TradingModel::~TradingModel() {}
+
+TradingModel::TradingModel(std::unordered_map<std::string, std::vector<float>> historical_data)
+{
 
     open_data = historical_data["Open"];
     high_data = historical_data["High"];
@@ -22,7 +24,8 @@ TradingModel::TradingModel(std::unordered_map<std::string, std::vector<float>> h
     datetime_data = historical_data["Datetime"];
 }
 
-void TradingModel::receive_latest_market_data(std::unordered_map<std::string, std::vector<float>> historical_data) {
+void TradingModel::receive_latest_market_data(std::unordered_map<std::string, std::vector<float>> historical_data)
+{
     // User Defined Trading Model
     open_data = historical_data["Open"];
     high_data = historical_data["High"];
@@ -31,11 +34,11 @@ void TradingModel::receive_latest_market_data(std::unordered_map<std::string, st
     datetime_data = historical_data["Datetime"];
 }
 
-int TradingModel::send_trading_signal(){
-    float signal = ((double) rand() / (RAND_MAX));
+int TradingModel::send_trading_signal()
+{
+    float signal = ((double)rand() / (RAND_MAX));
     signal = (signal > 0.5) ? 1 : -1;
     return signal;
 }
 
-} // namespace fxordermgmt
-
+}// namespace fxordermgmt

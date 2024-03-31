@@ -6,25 +6,26 @@
 
 #include <string>
 
-namespace fxordermgmt {
+namespace fxordermgmt
+{
 
-class FXUtilities {
+class FXUtilities
+{
 
-    public:
+  public:
+    FXUtilities();
 
-        FXUtilities();
+    ~FXUtilities();
 
-        ~FXUtilities();
+    bool setup_password_first_time(std::string account_type, std::string username);
 
-        bool setup_password_first_time(std::string account_type, std::string username);
+    void init_logging(std::string working_directory);
 
-        void init_logging(std::string working_directory);
+    std::string get_todays_date();
 
-        std::string get_todays_date();
-
-        bool validate_user_interval(std::string update_interval, int update_span, int &update_frequency_seconds);
+    bool validate_user_interval(std::string update_interval, int update_span, int& update_frequency_seconds);
 };
 
-}
+}// namespace fxordermgmt
 
 #endif

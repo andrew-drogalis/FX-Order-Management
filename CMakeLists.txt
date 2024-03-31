@@ -31,7 +31,9 @@ include(cmake/Tests.cmake)
 include(cmake/Hardening.cmake)
 include(cmake/PreventInSourceBuilds.cmake)
 include(cmake/ClangFormat.cmake)
+include(cmake/Keychain.cmake)
 
+build_keychain(${PROJECT_NAME} ${CMAKE_CURRENT_SOURCE_DIR})
 myproject_assure_out_of_source_builds()
 myproject_set_project_warnings(${PROJECT_NAME} TRUE "X" "" "" "X")
 add_compile_options(-O2) # Required to Fortify Source
@@ -39,7 +41,7 @@ myproject_enable_hardening(${PROJECT_NAME} TRUE FALSE)
 #myproject_enable_cppcheck(True "X")
 #myproject_enable_clang_tidy(${PROJECT_NAME} TRUE)
 #myproject_enable_include_what_you_use()
-#add_clang_format_target(RUN_CLANG-FORMAT ${CMAKE_CURRENT_SOURCE_DIR})
+add_clang_format_target(RUN_CLANG-FORMAT ${CMAKE_CURRENT_SOURCE_DIR})
 
 add_compile_options(-pipe -fPIC)
 if(CMAKE_BUILD_TYPE STREQUAL "Release")
@@ -68,42 +70,6 @@ add_library( gain_capital_api SHARED IMPORTED )
 set_target_properties( gain_capital_api PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/lib/libgain_capital_api.so.1.0.0 )
 
 target_link_libraries(${PROJECT_NAME} LINK_PUBLIC ${Boost_LIBRARIES} gain_capital_api)
-
-# For KeyChain 
-if (WIN32)
-    target_sources(${PROJECT_NAME}
-        PRIVATE
-            "src/keychain/keychain_win.cpp")
-
-    target_link_libraries(${PROJECT_NAME}
-        PRIVATE
-            crypt32)
-elseif (APPLE)
-    target_sources(${PROJECT_NAME}
-        PRIVATE
-            "src/keychain/keychain_mac.cpp")
-
-    find_library(COREFOUNDATION_LIBRARY CoreFoundation REQUIRED)
-    find_library(SECURITY_LIBRARY Security REQUIRED)
-
-    target_link_libraries(${PROJECT_NAME}
-        PRIVATE
-            ${COREFOUNDATION_LIBRARY}
-            ${SECURITY_LIBRARY})
-else () # assuming Linux
-    target_sources(${PROJECT_NAME}
-        PRIVATE
-            "src/keychain/keychain_linux.cpp")
-
-    find_package(PkgConfig REQUIRED)
-    pkg_check_modules(GLIB2 IMPORTED_TARGET glib-2.0)
-    pkg_check_modules(LIBSECRET IMPORTED_TARGET libsecret-1)
-
-    target_link_libraries(${PROJECT_NAME}
-        PRIVATE
-            PkgConfig::GLIB2
-            PkgConfig::LIBSECRET)
-endif ()
 
 # ------------------------------
 # Testing
