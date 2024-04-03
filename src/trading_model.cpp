@@ -16,7 +16,6 @@ TradingModel::~TradingModel() {}
 
 TradingModel::TradingModel(std::unordered_map<std::string, std::vector<float>> historical_data)
 {
-
     open_data = historical_data["Open"];
     high_data = historical_data["High"];
     low_data = historical_data["Low"];
@@ -26,7 +25,7 @@ TradingModel::TradingModel(std::unordered_map<std::string, std::vector<float>> h
 
 void TradingModel::receive_latest_market_data(std::unordered_map<std::string, std::vector<float>> historical_data)
 {
-    // User Defined Trading Model
+    // User defined trading model
     open_data = historical_data["Open"];
     high_data = historical_data["High"];
     low_data = historical_data["Low"];

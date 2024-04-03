@@ -27,7 +27,7 @@ class FXOrderManagement
 
     FXOrderManagement(std::string account, bool place_trades, int clear_system, std::string sys_path);
 
-    bool initalize_order_management();
+    bool initialize_order_management();
 
     bool run_order_management_system();
 
@@ -82,7 +82,7 @@ class FXOrderManagement
     // Trading Model
     // ==============================================================================================
 
-    void initalize_trading_model(std::string symbol);
+    void initialize_trading_model(std::string symbol);
 
     void get_trading_model_signal();
 

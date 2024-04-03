@@ -58,7 +58,7 @@ FXOrderManagement::FXOrderManagement(std::string paper_or_live, bool place_trade
     boost::log::add_console_log(std::cout, boost::log::keywords::format = ">> %Message%");
 }
 
-bool FXOrderManagement::initalize_order_management()
+bool FXOrderManagement::initialize_order_management()
 {
     fx_utilities = FXUtilities();
     if (! fx_utilities.validate_user_interval(update_interval, update_span, update_frequency_seconds)) { return false; }
@@ -91,10 +91,11 @@ bool FXOrderManagement::run_order_management_system()
         time_t time_now = time(NULL);
         BOOST_LOG_TRIVIAL(info) << "FX Order Management - Currently Running" << ctime(&time_now);
         std::cout << "For Live Updates, See Log File" << std::endl;
+        
         // Initialize Price History & Trading Model
         return_price_history(live_symbols_list);
-
-        for (std::string symbol : execute_list) { initalize_trading_model(symbol); }
+        for (std::string symbol : execute_list) { initialize_trading_model(symbol); }
+        
         // Start Loop
         while (true)
         {
@@ -106,11 +107,8 @@ bool FXOrderManagement::run_order_management_system()
             }
             // ----------------
             bool success = pause_next_bar();
-
             get_trading_model_signal();
-
             read_input_information();
-
             build_trades_map();
 
             BOOST_LOG_TRIVIAL(info) << "FX Order Management - Loop Completed";
@@ -151,7 +149,7 @@ bool FXOrderManagement::gain_capital_session()
 // ==============================================================================================
 // Trading Model
 // ==============================================================================================
-void FXOrderManagement::initalize_trading_model(std::string symbol)
+void FXOrderManagement::initialize_trading_model(std::string symbol)
 {
     TradingModel new_model = TradingModel(historical_data_map[symbol]);
     trading_model_map[symbol] = new_model;
@@ -168,7 +166,7 @@ void FXOrderManagement::get_trading_model_signal()
         if (trading_model_map.count(symbol)) { trading_model_instance = trading_model_map[symbol]; }
         else
         {
-            initalize_trading_model(symbol);
+            initialize_trading_model(symbol);
             trading_model_instance = trading_model_map[symbol];
         }
         trading_model_instance.receive_latest_market_data(historical_data_map[symbol]);
@@ -345,6 +343,7 @@ void FXOrderManagement::return_price_history(std::vector<std::string> symbols_li
 {
     // Get Historical Forex Data
     BOOST_LOG_TRIVIAL(info) << "FX Order Management - Attempting to Fetch Price History";
+    int const WAIT_DURATION = 10;
     long unsigned int timestamp_now;
     long unsigned int start = (std::chrono::system_clock::now().time_since_epoch()).count() * std::chrono::system_clock::period::num /
                               std::chrono::system_clock::period::den;
@@ -379,7 +378,7 @@ void FXOrderManagement::return_price_history(std::vector<std::string> symbols_li
         loop_list = price_data_update_failure;
         timestamp_now = (std::chrono::system_clock::now().time_since_epoch()).count() * std::chrono::system_clock::period::num /
                         std::chrono::system_clock::period::den;
-        if (loop_list.empty() || timestamp_now - start > 10) { break; }
+        if (loop_list.empty() || (timestamp_now - start) > WAIT_DURATION) { break; }
         else
         {
             price_data_update_failure = {};
@@ -418,7 +417,7 @@ void FXOrderManagement::return_price_history(std::vector<std::string> symbols_li
         BOOST_LOG_TRIVIAL(error) << "FX Order Management - Price Data Update Failure " << symbol << "; Will Retry After Trades Placed";
     }
     // ------------------------------------
-    // Seperate Data From OHLC into Individual Vectors
+    // Separate Data From OHLC into Individual Vectors
     execute_list = {};
     for (std::string symbol : completed_list)
     {
@@ -450,7 +449,7 @@ void FXOrderManagement::return_price_history(std::vector<std::string> symbols_li
         else
         {
             data_error_list.push_back(symbol);
-            BOOST_LOG_TRIVIAL(warning) << "Data Aquisition Error; Length Too Short: " << symbol << " - " << data_length;
+            BOOST_LOG_TRIVIAL(warning) << "Data Acquisition Error; Length Too Short: " << symbol << " - " << data_length;
         }
     }
 }
@@ -461,7 +460,7 @@ bool FXOrderManagement::pause_next_bar()
     long unsigned int time_next_bar_will_be_ready = next_bar_timestamp + update_frequency_seconds;
     unsigned int timestamp_now;
     // -----------------------------------
-    // Execute Trading Model & Confirm All Data Aquired Properly
+    // Execute Trading Model & Confirm All Data Acquired Properly
     for (int x = 0; x < 5; x++)
     {
         timestamp_now = (std::chrono::system_clock::now().time_since_epoch()).count() * std::chrono::system_clock::period::num /
@@ -504,9 +503,9 @@ bool FXOrderManagement::pause_next_bar()
                 live_symbols_list.erase(remove(live_symbols_list.begin(), live_symbols_list.end(), symbol), live_symbols_list.end());
                 price_data_update_datetime.erase(symbol);
 
-                BOOST_LOG_TRIVIAL(error) << "Data Aquisition Error: " << symbol << std::endl;
+                BOOST_LOG_TRIVIAL(error) << "Data Acquisition Error: " << symbol << std::endl;
                 position_multiplier[symbol] = 0;
-                std::cout << "Data Aquisition Error: " << symbol << std::endl;
+                std::cout << "Data Acquisition Error: " << symbol << std::endl;
             }
             catch (...)
             {
@@ -555,7 +554,7 @@ void FXOrderManagement::execute_signals(nlohmann::json trade_dict)
                     if (x == 2)
                     {
                         nlohmann::json resp = session.cancel_order(item["TradeOrder"]["OrderId"]);
-                        BOOST_LOG_TRIVIAL(warning) << "Cancelled Order: " << resp << std::endl;
+                        BOOST_LOG_TRIVIAL(warning) << "Canceled Order: " << resp << std::endl;
                     }
                 }
                 // ------------
@@ -711,7 +710,7 @@ bool FXOrderManagement::output_order_information()
     float total_profit = round((equity_total - init_equity) * 100) / 100;
     float total_profit_percent = (init_equity != 0) ? round(profit * 10000 / init_equity) / 100 : 0;
 
-    current_performance["Performance Information"] = {{"Inital Funds", init_equity},
+    current_performance["Performance Information"] = {{"Initial Funds", init_equity},
                                                       {"Current Funds", equity_total},
                                                       {"Margin Utilized", margin_total},
                                                       {"Profit Cumulative", total_profit},

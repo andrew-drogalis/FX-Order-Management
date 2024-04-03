@@ -31,7 +31,8 @@
 				"eamodio.gitlens",
 				"ms-python.python",
 				"ms-python.vscode-pylance",
-				"mutantdino.resourcemonitor"
+				"mutantdino.resourcemonitor",
+				"streetsidesoftware.code-spell-checker"
 			]
 	      }
 	},

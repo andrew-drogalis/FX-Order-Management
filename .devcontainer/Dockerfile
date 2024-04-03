@@ -37,7 +37,7 @@ RUN dnf -y install \
 
 # Project specific dependancies
 RUN dnf -y install \
-        openssl-devel libsecret-devel
+        openssl-devel libsecret-devel libmicrohttpd-devel
     
 RUN pip install conan lizard cmakelang codespell gcovr && \
         dnf clean all && \

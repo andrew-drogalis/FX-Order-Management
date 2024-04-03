@@ -108,7 +108,7 @@ bool FXMarketTime::pause_till_market_open()
     {
         float time_to_wait_now =
             FX_market_start - (ch::system_clock::now().time_since_epoch()).count() * ch::system_clock::period::num / ch::system_clock::period::den;
-        // Outpuit Status Message
+        // Output Status Message
         std::cout << "Market Closed Today; Waiting for Tomorrow; Will be waiting for " << round(time_to_wait_now / 36) / 100 << " Hours..."
                   << std::endl;
         // Pause Until Market Open
@@ -117,7 +117,7 @@ bool FXMarketTime::pause_till_market_open()
     }
     if (! will_market_be_open_tomorrow)
     {
-        std::cout << "Market is Closed Today; Weekend Approaching; Terminating Program" << std::endl;
+        std::cout << "Market is Closed Today; Weekend Approaching; Terminating Program." << std::endl;
         return false;
     }
     return true;
