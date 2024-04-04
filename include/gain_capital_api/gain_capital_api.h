@@ -4,95 +4,85 @@
 #ifndef GAIN_CAPITAL_API_H
 #define GAIN_CAPITAL_API_H
 
-#include <string>
-#include <vector>
-#include <unordered_map>
-
-#include "json/json.hpp"
 #include "cpr/cpr.h"
 
-namespace gaincapital {
+#include "json/json.hpp"
+#include <string>
+#include <unordered_map>
+#include <vector>
 
-class GCapiClient {
+namespace gaincapital
+{
 
-    public:
-        // User Can Access These For Their Records
-        std::string trading_account_id = "";
-        std::string client_account_id = "";
-        std::unordered_map<std::string, int> market_id_map;
+class GCapiClient
+{
 
-        GCapiClient();
+  public:
+    // User can access these.
+    std::string trading_account_id = "";
+    std::string client_account_id = "";
+    std::unordered_map<std::string, int> market_id_map;
 
-        ~GCapiClient();
+    GCapiClient();
 
-        GCapiClient(std::string username, std::string password, std::string appkey);
+    ~GCapiClient();
 
-        // =================================================================================================================
-        // UTILITIES
-        // =================================================================================================================
+    GCapiClient(std::string username, std::string password, std::string appkey);
 
-        bool authenticate_session();
+    // =================================================================================================================
+    // UTILITIES
+    // =================================================================================================================
 
-        bool validate_session();
+    bool authenticate_session();
 
-        bool validate_session_header();
+    bool validate_session();
 
-        bool validate_auth_payload();
+    bool validate_session_header();
 
-        bool validate_account_ids();
+    bool validate_auth_payload();
 
-        void set_testing_rest_urls(std::string url);
+    bool validate_account_ids();
 
-        // =================================================================================================================
-        // API CALLS
-        // =================================================================================================================
+    void set_testing_rest_urls(std::string url);
 
-        nlohmann::json get_account_info(std::string param = "");
+    // =================================================================================================================
+    // API CALLS
+    // =================================================================================================================
 
-        nlohmann::json get_margin_info(std::string param = "");
+    nlohmann::json get_account_info(std::string param = "");
 
-        std::unordered_map<std::string, int> get_market_ids(std::vector<std::string> positions);
+    nlohmann::json get_margin_info(std::string param = "");
 
-        std::unordered_map<std::string, std::string> get_market_info(
-            std::vector<std::string> market_name_list, 
-            std::string param = "");
+    std::unordered_map<std::string, int> get_market_ids(std::vector<std::string> positions);
 
-        std::unordered_map<std::string, nlohmann::json> get_prices(
-            std::vector<std::string> market_name_list, 
-            int num_ticks = 1, 
-            long unsigned int from_ts = 0, 
-            long unsigned int to_ts = 0, 
-            std::string price_type = "MID");
+    std::unordered_map<std::string, std::string> get_market_info(std::vector<std::string> market_name_list, std::string param = "");
 
-        std::unordered_map<std::string, nlohmann::json> get_ohlc(
-            std::vector<std::string> market_name_list, 
-            std::string interval, 
-            int num_ticks = 1, 
-            int span = 1, 
-            long unsigned int from_ts = 0, 
-            long unsigned int to_ts = 0);
+    std::unordered_map<std::string, nlohmann::json> get_prices(std::vector<std::string> market_name_list, unsigned int num_ticks = 1,
+                                                               long unsigned int from_ts = 0, long unsigned int to_ts = 0,
+                                                               std::string price_type = "MID");
 
-        std::vector<std::string> trade_order(
-            nlohmann::json trade_map, 
-            std::string type, 
-            std::string tr_account_id = "");
+    std::unordered_map<std::string, nlohmann::json> get_ohlc(std::vector<std::string> market_name_list, std::string interval,
+                                                             unsigned int num_ticks = 1, unsigned int span = 1, long unsigned int from_ts = 0,
+                                                             long unsigned int to_ts = 0);
 
-        nlohmann::json list_open_positions(std::string tr_account_id = "");
-        
-        nlohmann::json list_active_orders(std::string tr_account_id = "");
+    std::vector<std::string> trade_order(nlohmann::json trade_map, std::string type, std::string tr_account_id = "");
 
-        nlohmann::json cancel_order(
-            std::string order_id, 
-            std::string tr_account_id = "");
+    nlohmann::json list_open_positions(std::string tr_account_id = "");
 
-    private:
-        std::string rest_url_v2 = "https://ciapi.cityindex.com/v2";
-        std::string rest_url = "https://ciapi.cityindex.com/TradingAPI";
-        cpr::Header session_header;
-        nlohmann::json auth_payload;
-        nlohmann::json session_payload;
+    nlohmann::json list_active_orders(std::string tr_account_id = "");
+
+    nlohmann::json cancel_order(std::string order_id, std::string tr_account_id = "");
+
+  private:
+    std::string rest_url_v2 = "https://ciapi.cityindex.com/v2";
+    std::string rest_url = "https://ciapi.cityindex.com/TradingAPI";
+    cpr::Header session_header;
+    nlohmann::json auth_payload;
+    nlohmann::json session_payload;
+
+    bool set_trading_account_id();
 };
 
-} // namespace gaincapital
+}// namespace gaincapital
 
 #endif

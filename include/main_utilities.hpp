@@ -3,6 +3,7 @@
 
 #include <iostream>
 #include <string>
+#include <algorithm>
 
 namespace fxordermgmt
 {
@@ -32,7 +33,7 @@ bool validateMainParameters(int argc, char* argv[], std::string& ACCOUNT, bool& 
         if (arg2 == "1" || arg2 == "true") { PLACE_TRADES = true; }
         else if (arg2 == "0" || arg2 == "false") { PLACE_TRADES = false; }
         else {
-            std::cout << "Incorrect Argument for PLACE_TRADES - Provide Either true (1) or false (0);
+            std::cout << "Incorrect Argument for PLACE_TRADES - Provide Either true (1) or false (0)";
             return false;
         }
         if (argc > 3) 
@@ -49,7 +50,15 @@ void userInputEmergencyClose(int& emergencyClose)
     while (true)
     {
         std::cout << "Close All Open Positions?\n\nPlease Enter: 1 = True; 0 = False;\n\nYour Selection: ";
-        std::cin >> emergencyClose;
+        try
+        {
+            std::cin >> emergencyClose;
+        }
+        catch ( ... ) 
+        {
+            std::cout << "\nWrong Input\n";
+            continue;
+        }
         std::cout << '\n';
         if (emergencyClose == 1 || emergencyClose == 0) { break; }
         else { std::cout << "Wrong Input\n"; }

@@ -28,11 +28,11 @@ Please see a link to required dependencies [below](#Dependencies). If you are in
 
 ```
     Fedora:
-        dnf install boost-devel openssl-devel libsecret-devel
+        dnf install boost-devel openssl-devel libsecret-devel libmicrohttpd-devel
     Debian:
-        apt-get install libboost-all-dev libssl-dev libsecret-1-dev
+        apt-get install libboost-all-dev libssl-dev libsecret-1-dev libmicrohttpd-devel
     Arch: 
-        pacman -Ss boost
+        pacman -Ss boost libmicrohttpd
         pacman -S --needed openssl
         pacman -Sy libsecret
 ```
@@ -223,10 +223,12 @@ Changing the value to true will either close the trade immediately upon the upda
 - [Boost](https://www.boost.org/) - *Must be installed by user*
 - [Libsecret](https://wiki.gnome.org/Projects/Libsecret) - *For Linux, Must be installed by user*
 - [OpenSSL](https://www.openssl.org/) - *Must be installed by user*
+- [libmicrohttpd](https://www.gnu.org/software/libmicrohttpd/) - Required for Tests Only - *Must be installed by user*
 - [CPR](https://github.com/libcpr/cpr) - Included in CMake Fetch Content
 - [JSON](https://github.com/nlohmann/json) - .hpp file included in repository
 - [Gain Capital API C++](https://github.com/andrew-drogalis/Gain-Capital-API-Cpp) - Library included in repository
 - [Keychain](https://github.com/hrantzsch/keychain) - Library included in repository
+- [httpmockserver](https://github.com/seznam/httpmockserver) - Required for Tests Only - Library included in repository
 
 ## License
 

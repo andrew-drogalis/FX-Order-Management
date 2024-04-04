@@ -1,7 +1,7 @@
 // Copyright 2024, Andrew Drogalis
 // GNU License
 
-#include "gain_capital_api/gain_capital_api.h"
+#include "fx_order_management.h"
 
 #include "gtest/gtest.h"
 
