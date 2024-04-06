@@ -17,8 +17,6 @@ class TradingModel
   public:
     TradingModel();
 
-    ~TradingModel();
-
     TradingModel(std::unordered_map<std::string, std::vector<float>> historical_data);
 
     int send_trading_signal();

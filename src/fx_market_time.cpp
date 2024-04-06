@@ -25,8 +25,6 @@ FXMarketTime::FXMarketTime(int update_frequency_seconds, FXUtilities fx_utilitie
 {
 }
 
-FXMarketTime::~FXMarketTime() {}
-
 void FXMarketTime::forex_market_time_setup()
 {
     // 24 HR Start Trading Time & End Trading Time

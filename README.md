@@ -41,9 +41,11 @@ Please see a link to required dependencies [below](#Dependencies). If you are in
 
 ### Storing User Credentials
 
-```c
-    #include <string>
+The '_INIT' macro will initialize the variables ONLY if they have not been initialized, otherwise they will just be prototype declarations. This prevents any redefinition compiler errors.
 
+The user should replace the usernames and API key, but the password should not be stored in plain text. The program will prompt the user to assign a new password if one doesn't already exist in the keyring.
+
+```c
     namespace fxordermgmt {
 
     _DECL std::string account_username _INIT("BLANK");
@@ -59,10 +61,11 @@ Please see a link to required dependencies [below](#Dependencies). If you are in
 
 ### Updating Order Parameters
 
-```c
-    #include <string>
-    #include <vector>
+The '_INIT' macro and '_INIT_VECT' macro will initialize the variables ONLY if they have not been initialized, otherwise they will just be prototype declarations. This prevents any redefinition compiler errors.
 
+The user can replace the order parameters with any valid combination as described in the Gain Capital API documents. In the case of a typo, the code provides appropriate checks to confirm the user is compliant with the documentation.
+
+```c
     namespace fxordermgmt {
 
     _DECL std::vector<std::string> fx_symbols_to_trade _INIT_VECT("USD/JPY", "EUR/USD", "USD/CHF", "USD/CAD");
@@ -105,7 +108,7 @@ User will be prompted the first time they use the application. The password will
 
 ### Updating Trading Model
 
-Please don't run in a live trading environment with the placeholder trading model provided. 
+Please don't run in a live trading environment with the placeholder trading model provided. The user should modify with their own trading strategy.
 
 ```c
 #include <trading_model.h>
@@ -118,9 +121,7 @@ namespace fxordermgmt {
 
 TradingModel::TradingModel() { }
 
-TradingModel::~TradingModel() { }
-
-TradingModel::TradingModel(std::unordered_map<std::string, std::vector<float>> historical_data){
+TradingModel::TradingModel(std::unordered_map<std::string, std::vector<float>> historical_data) {
     open_data = historical_data["Open"];
     high_data = historical_data["High"];
     low_data = historical_data["Low"];
@@ -137,7 +138,7 @@ void TradingModel::receive_latest_market_data(std::unordered_map<string, vector<
     datetime_data = historical_data["Datetime"];
 }
 
-int TradingModel::send_trading_signal(){
+int TradingModel::send_trading_signal() {
     float signal = ((double) rand() / (RAND_MAX));
     signal = (signal > 0.5) ? 1 : -1;
     return signal;

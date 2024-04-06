@@ -36,8 +36,6 @@ namespace fxordermgmt
 
 FXOrderManagement::FXOrderManagement() {}
 
-FXOrderManagement::~FXOrderManagement() {}
-
 FXOrderManagement::FXOrderManagement(std::string paper_or_live, bool place_trades, int emergency_close, std::string working_directory)
     : paper_or_live(paper_or_live), place_trades(place_trades), emergency_close(emergency_close), sys_path(working_directory)
 {

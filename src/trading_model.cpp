@@ -12,8 +12,6 @@ namespace fxordermgmt
 
 TradingModel::TradingModel() {}
 
-TradingModel::~TradingModel() {}
-
 TradingModel::TradingModel(std::unordered_map<std::string, std::vector<float>> historical_data)
 {
     open_data = historical_data["Open"];

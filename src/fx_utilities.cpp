@@ -17,8 +17,6 @@ namespace fxordermgmt
 
 FXUtilities::FXUtilities() {}
 
-FXUtilities::~FXUtilities() {}
-
 bool FXUtilities::setup_password_first_time(std::string account_type, std::string username)
 {
     std::string service_id_test = "Test_Account", service_id_live = "Live_Account", package_test = "com.gain_capital_forex.test_account",

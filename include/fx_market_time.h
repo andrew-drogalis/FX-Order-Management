@@ -17,8 +17,6 @@ class FXMarketTime
 
     FXMarketTime(int update_frequency_seconds, FXUtilities fx_utilities);
 
-    ~FXMarketTime();
-
     void forex_market_time_setup();
 
     bool market_closed();

@@ -23,8 +23,6 @@ class FXOrderManagement
   public:
     FXOrderManagement();
 
-    ~FXOrderManagement();
-
     FXOrderManagement(std::string account, bool place_trades, int clear_system, std::string sys_path);
 
     bool initialize_order_management();

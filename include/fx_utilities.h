@@ -15,8 +15,6 @@ class FXUtilities
   public:
     FXUtilities();
 
-    ~FXUtilities();
-
     bool setup_password_first_time(std::string account_type, std::string username);
 
     void init_logging(std::string working_directory);
