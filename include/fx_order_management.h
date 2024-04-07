@@ -25,9 +25,15 @@ class FXOrderManagement
 
     FXOrderManagement(std::string account, bool place_trades, int clear_system, std::string sys_path);
 
+    FXOrderManagement(const FXOrderManagement& obj) = delete;
+
+    FXOrderManagement& operator=(const FXOrderManagement& obj) = delete;
+
     bool initialize_order_management();
 
     bool run_order_management_system();
+
+    void set_testing_parameters(std::string url);
 
   private:
     // Passed Through Constructor
@@ -69,6 +75,10 @@ class FXOrderManagement
     int update_frequency_seconds = 0;
     FXUtilities fx_utilities;
     FXMarketTime fx_market_time;
+
+    // Testing
+    bool global_testing = false;
+    std::string testing_url = "";
 
     // ==============================================================================================
     // Gain Capital API

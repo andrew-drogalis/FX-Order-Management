@@ -56,6 +56,12 @@ FXOrderManagement::FXOrderManagement(std::string paper_or_live, bool place_trade
     boost::log::add_console_log(std::cout, boost::log::keywords::format = ">> %Message%");
 }
 
+void FXOrderManagement::set_testing_parameters(std::string url)
+{
+    global_testing = true;
+    testing_url = url;
+}
+
 bool FXOrderManagement::initialize_order_management()
 {
     fx_utilities = FXUtilities();
@@ -135,6 +141,7 @@ bool FXOrderManagement::gain_capital_session()
     }
     // ---------------------------------------
     session = gaincapital::GCapiClient(trading_account, password, forex_api_key);
+    if (global_testing) { session.set_testing_rest_urls(testing_url); }
     if (! session.authenticate_session()) { return false; }
 
     BOOST_LOG_TRIVIAL(info) << "FX Order Management - New Gain Capital Session Initiated";

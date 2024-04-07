@@ -111,25 +111,10 @@ User will be prompted the first time they use the application. The password will
 Please don't run in a live trading environment with the placeholder trading model provided. The user should modify with their own trading strategy.
 
 ```c
-#include <trading_model.h>
-
-#include <unordered_map>
-#include <vector>
-#include <string>
-
 namespace fxordermgmt {
 
-TradingModel::TradingModel() { }
-
-TradingModel::TradingModel(std::unordered_map<std::string, std::vector<float>> historical_data) {
-    open_data = historical_data["Open"];
-    high_data = historical_data["High"];
-    low_data = historical_data["Low"];
-    close_data = historical_data["Close"];
-    datetime_data = historical_data["Datetime"];
-}
-
-void TradingModel::receive_latest_market_data(std::unordered_map<string, vector<float>> historical_data) {
+void TradingModel::receive_latest_market_data(std::unordered_map<string, vector<float>> historical_data) 
+{
     // User Defined Trading Model
     open_data = historical_data["Open"];
     high_data = historical_data["High"];
@@ -138,7 +123,8 @@ void TradingModel::receive_latest_market_data(std::unordered_map<string, vector<
     datetime_data = historical_data["Datetime"];
 }
 
-int TradingModel::send_trading_signal() {
+int TradingModel::send_trading_signal() 
+{
     float signal = ((double) rand() / (RAND_MAX));
     signal = (signal > 0.5) ? 1 : -1;
     return signal;
@@ -152,7 +138,8 @@ int TradingModel::send_trading_signal() {
 The default is paper trading, switch to live account and set place trades to true.
 
 ```c
-int main(int argc, char* argv[]) {
+int main(int argc, char* argv[])
+{
     // =============================================================
     // USER INPUT DEFAULTS
     // =============================================================
