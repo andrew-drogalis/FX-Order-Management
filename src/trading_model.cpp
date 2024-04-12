@@ -10,32 +10,29 @@
 namespace fxordermgmt
 {
 
-TradingModel::TradingModel() {}
-
-TradingModel::TradingModel(std::unordered_map<std::string, std::vector<float>> historical_data)
+TradingModel::TradingModel(const std::vector<float>& openPrices, const std::vector<float>& highPrices, const std::vector<float>& lowPrices,
+                           const std::vector<float>& closePrices, const std::vector<float>& dateTime)
+    : openPrices(openPrices), highPrices(highPrices), lowPrices(lowPrices), closePrices(closePrices), dateTime(dateTime)
 {
-    open_data = historical_data["Open"];
-    high_data = historical_data["High"];
-    low_data = historical_data["Low"];
-    close_data = historical_data["Close"];
-    datetime_data = historical_data["Datetime"];
 }
 
-void TradingModel::receive_latest_market_data(std::unordered_map<std::string, std::vector<float>> historical_data)
+void TradingModel::receive_latest_market_data(const std::vector<float>& openPrices, const std::vector<float>& highPrices,
+                                              const std::vector<float>& lowPrices, const std::vector<float>& closePrices,
+                                              const std::vector<float>& dateTime) noexcept
 {
-    // User defined trading model
-    open_data = historical_data["Open"];
-    high_data = historical_data["High"];
-    low_data = historical_data["Low"];
-    close_data = historical_data["Close"];
-    datetime_data = historical_data["Datetime"];
+    // Update the market data with each update interval
+    this->openPrices = openPrices;
+    this->highPrices = highPrices;
+    this->lowPrices = lowPrices;
+    this->closePrices = closePrices;
+    this->dateTime = dateTime;
 }
 
 int TradingModel::send_trading_signal()
 {
-    float signal = ((double)rand() / (RAND_MAX));
-    signal = (signal > 0.5) ? 1 : -1;
-    return signal;
+    // User's code to Buy / Sell
+    double const signal = static_cast<double>(rand()) / RAND_MAX;
+    return (signal > 0.5) ? 1 : -1;
 }
 
 }// namespace fxordermgmt

@@ -4,8 +4,6 @@
 #ifndef FX_MARKET_TIME_H
 #define FX_MARKET_TIME_H
 
-#include "fx_utilities.h"
-
 namespace fxordermgmt
 {
 
@@ -13,26 +11,41 @@ class FXMarketTime
 {
 
   public:
-    FXMarketTime();
+    FXMarketTime() noexcept = default;
 
-    FXMarketTime(int update_frequency_seconds, FXUtilities fx_utilities);
+    FXMarketTime(int start_hr, int end_hr, int update_frequency_seconds) noexcept;
 
-    void forex_market_time_setup();
+    [[nodiscard]] bool forex_market_time_setup();
 
-    bool market_closed();
+    void set_timezone_offset();
 
-    bool forex_market_exit_only();
+    void correct_start_and_end_offset(int offset, int& start_days_adjustment, int& end_days_adjustment);
 
-    bool pause_till_market_open();
+    void check_local_time_within_market_hours(int& start_days_adjustment, int& end_days_adjustment);
+
+    void set_trading_time_bounds(int offset_seconds);
+
+    [[nodiscard]] bool is_market_open_today(const std::string& todays_date, int start_days_adjustment, int end_days_adjustment, int day_of_week);
+
+    void pause_till_market_open(float seconds_to_wait);
+
+    void set_testing_parameters();
+
+    [[nodiscard]] bool is_market_closed();
+
+    [[nodiscard]] bool is_forex_market_close_only();
 
   private:
     // Forex Time
-    long unsigned int FX_market_start = 0;
-    long unsigned int FX_market_end = 0;
-    long unsigned int market_close_time = 0;
+    std::size_t FX_market_start = 0;
+    std::size_t FX_market_end = 0;
+    std::size_t market_close_time = 0;
+    int start_hr = 0;
+    int end_hr = 0;
+    int tz_offset = 0;
+    int tz_offset_seconds = 0;
     int update_frequency_seconds = 0;
-    bool will_market_be_open_tomorrow = false;
-    FXUtilities fx_utilities;
+    bool fx_testing = false;
 };
 
 }// namespace fxordermgmt

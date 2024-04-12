@@ -48,11 +48,11 @@ The user should replace the usernames and API key, but the password should not b
 ```c
     namespace fxordermgmt {
 
-    _DECL std::string account_username _INIT("BLANK");
+    _DECL std::string const account_username _INIT("BLANK");
 
-    _DECL std::string paper_account_username _INIT("BLANK");
+    _DECL std::string const paper_account_username _INIT("BLANK");
 
-    _DECL std::string forex_api_key _INIT("BLANK");
+    _DECL std::string const forex_api_key _INIT("BLANK");
 
     // Store Passwords in Keyring.
 
@@ -68,16 +68,20 @@ The user can replace the order parameters with any valid combination as describe
 ```c
     namespace fxordermgmt {
 
-    _DECL std::vector<std::string> fx_symbols_to_trade _INIT_VECT("USD/JPY", "EUR/USD", "USD/CHF", "USD/CAD");
+    _DECL std::vector<std::string> const fx_symbols_to_trade _INIT_VECT("USD/JPY", "EUR/USD", "USD/CHF", "USD/CAD");
 
-    _DECL int order_position_size _INIT(2'000); // Lot Size
+    _DECL int const order_position_size _INIT(2'000); // Lot Size
 
-    _DECL int num_data_points _INIT(1'000);
+    _DECL int const num_data_points _INIT(1'000); // Historical Data
 
     _DECL std::string update_interval _INIT("MINUTE"); // MINUTE or HOUR
 
-    _DECL int update_span _INIT(5); // Span of Interval e.g. 5 Minutes
+    _DECL int const update_span _INIT(5); // Span of Interval e.g. 5 Minutes
 
+    _DECL int const start_hr _INIT(8); // User defined Start Time in London Time (Forex Trading on London exchange)
+
+    _DECL int const end_hr _INIT(20);  // User defined End Time in London Time (Forex Trading on London exchange)
+    
     }
 ```
 
@@ -113,21 +117,23 @@ Please don't run in a live trading environment with the placeholder trading mode
 ```c
 namespace fxordermgmt {
 
-void TradingModel::receive_latest_market_data(std::unordered_map<string, vector<float>> historical_data) 
+void TradingModel::receive_latest_market_data(const std::vector<float>& openPrices, const std::vector<float>& highPrices,
+                                              const std::vector<float>& lowPrices, const std::vector<float>& closePrices,
+                                              const std::vector<float>& dateTime) noexcept
 {
-    // User Defined Trading Model
-    open_data = historical_data["Open"];
-    high_data = historical_data["High"];
-    low_data = historical_data["Low"];
-    close_data = historical_data["Close"];
-    datetime_data = historical_data["Datetime"];
+    // Update the market data with each update interval
+    this->openPrices = openPrices;
+    this->highPrices = highPrices;
+    this->lowPrices = lowPrices;
+    this->closePrices = closePrices;
+    this->dateTime = dateTime;
 }
 
 int TradingModel::send_trading_signal() 
 {
-    float signal = ((double) rand() / (RAND_MAX));
-    signal = (signal > 0.5) ? 1 : -1;
-    return signal;
+    // User's code to Buy / Sell
+    double const signal = static_cast<double>(rand()) / RAND_MAX;
+    return (signal > 0.5) ? 1 : -1;
 }
 
 } // namespace fxordermgmt

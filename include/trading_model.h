@@ -13,22 +13,23 @@ namespace fxordermgmt
 
 class TradingModel
 {
-
   public:
-    TradingModel();
+    TradingModel() = default;
 
-    TradingModel(std::unordered_map<std::string, std::vector<float>> historical_data);
+    TradingModel(const std::vector<float>& openPrices, const std::vector<float>& highPrices, const std::vector<float>& lowPrices,
+                 const std::vector<float>& closePrices, const std::vector<float>& dateTime) noexcept;
 
-    int send_trading_signal();
+    void receive_latest_market_data(const std::vector<float>& openPrices, const std::vector<float>& highPrices, const std::vector<float>& lowPrices,
+                                    const std::vector<float>& closePrices, const std::vector<float>& dateTime) noexcept;
 
-    void receive_latest_market_data(std::unordered_map<std::string, std::vector<float>> historical_data);
+    [[nodiscard]] int send_trading_signal();
 
   private:
-    std::vector<float> open_data;
-    std::vector<float> high_data;
-    std::vector<float> low_data;
-    std::vector<float> close_data;
-    std::vector<float> datetime_data;
+    std::vector<float> openPrices;
+    std::vector<float> highPrices;
+    std::vector<float> lowPrices;
+    std::vector<float> closePrices;
+    std::vector<float> dateTime;
 };
 
 }// namespace fxordermgmt

@@ -21,17 +21,23 @@ class FXOrderManagement
 {
 
   public:
-    FXOrderManagement();
+    FXOrderManagement() noexcept = default;
 
-    FXOrderManagement(std::string account, bool place_trades, int clear_system, std::string sys_path);
+    FXOrderManagement(const std::string& account, bool place_trades, int clear_system, const std::string& sys_path);
+
+    ~FXOrderManagement() noexcept = default;
 
     FXOrderManagement(const FXOrderManagement& obj) = delete;
 
     FXOrderManagement& operator=(const FXOrderManagement& obj) = delete;
 
-    bool initialize_order_management();
+    FXOrderManagement(FXOrderManagement&& obj) noexcept = default;
 
-    bool run_order_management_system();
+    FXOrderManagement& operator=(FXOrderManagement&& obj) noexcept = default;
+
+    [[nodiscard]] bool initialize_order_management();
+
+    [[nodiscard]] bool run_order_management_system();
 
     void set_testing_parameters(std::string url);
 
@@ -47,7 +53,6 @@ class FXOrderManagement
     gaincapital::GCapiClient session;
 
     // For Trading Indicator
-    std::unordered_map<std::string, int> main_signals;
     std::unordered_map<std::string, TradingModel> trading_model_map;
     std::unordered_map<std::string, std::unordered_map<std::string, std::vector<float>>> historical_data_map;
 
@@ -58,10 +63,10 @@ class FXOrderManagement
     nlohmann::json open_positions;
 
     // Getting Price History
-    long unsigned int last_bar_timestamp = 0, next_bar_timestamp = 0;
+    std::size_t last_bar_timestamp = 0, next_bar_timestamp = 0;
     std::vector<std::string> price_data_update_failure, data_error_list, live_symbols_list;
     std::unordered_map<std::string, int> price_data_update_failure_count;
-    std::unordered_map<std::string, long unsigned int> price_data_update_datetime;
+    std::unordered_map<std::string, std::size_t> price_data_update_datetime;
 
     // Placing Trades
     int execution_loop_count = 0;
@@ -84,13 +89,13 @@ class FXOrderManagement
     // Gain Capital API
     // ==============================================================================================
 
-    bool gain_capital_session();
+    [[nodiscard]] bool gain_capital_session();
 
     // ==============================================================================================
     // Trading Model
     // ==============================================================================================
 
-    void initialize_trading_model(std::string symbol);
+    void initialize_trading_model(const std::string& symbol);
 
     void get_trading_model_signal();
 
@@ -102,11 +107,11 @@ class FXOrderManagement
 
     void emergency_position_close();
 
-    void return_tick_history(std::vector<std::string> symbols_list);
+    void return_tick_history(const std::vector<std::string>& symbols_list);
 
-    void return_price_history(std::vector<std::string> symbols_list);
+    void return_price_history(const std::vector<std::string>& symbols_list) noexcept;
 
-    bool pause_next_bar();
+    [[nodiscard]] bool pause_next_bar();
 
     void execute_signals(nlohmann::json trade_dict);
 
@@ -116,9 +121,9 @@ class FXOrderManagement
     // Forex Order File I/O
     // ==============================================================================================
 
-    bool read_input_information();
+    [[nodiscard]] bool read_input_information();
 
-    bool output_order_information();
+    [[nodiscard]] bool output_order_information();
 };
 
 }// namespace fxordermgmt

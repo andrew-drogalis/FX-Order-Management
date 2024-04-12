@@ -17,11 +17,11 @@
 namespace fxordermgmt
 {
 
-_DECL std::string account_username _INIT("BLANK");
+_DECL std::string const account_username _INIT("BLANK");
 
-_DECL std::string paper_account_username _INIT("BLANK");
+_DECL std::string const paper_account_username _INIT("BLANK");
 
-_DECL std::string forex_api_key _INIT("BLANK");
+_DECL std::string const forex_api_key _INIT("BLANK");
 
 // Store Passwords in Keyring.
 

@@ -1,14 +1,14 @@
 // Copyright 2024, Andrew Drogalis
 // GNU License
 
+#include <algorithm>
 #include <iostream>
 #include <string>
-#include <algorithm>
 
 namespace fxordermgmt
 {
 
-bool validateAccountType(std::string& account)
+[[nodiscard]] bool validateAccountType(std::string& account) noexcept
 {
     std::transform(account.begin(), account.end(), account.begin(), ::toupper);
     if (account != "PAPER" && account != "LIVE")
@@ -23,7 +23,8 @@ bool validateAccountType(std::string& account)
     }
 }
 
-bool validateMainParameters(int argc, char* argv[], std::string& ACCOUNT, bool& PLACE_TRADES) {
+[[nodiscard]] bool validateMainParameters(int argc, char* argv[], std::string& ACCOUNT, bool& PLACE_TRADES) noexcept
+{
     if (argc == 2) { ACCOUNT = argv[1]; }
     else if (argc >= 3)
     {
@@ -32,20 +33,21 @@ bool validateMainParameters(int argc, char* argv[], std::string& ACCOUNT, bool& 
         std::transform(arg2.begin(), arg2.end(), arg2.begin(), ::tolower);
         if (arg2 == "1" || arg2 == "true") { PLACE_TRADES = true; }
         else if (arg2 == "0" || arg2 == "false") { PLACE_TRADES = false; }
-        else {
+        else
+        {
             std::cout << "Incorrect Argument for PLACE_TRADES - Provide Either true (1) or false (0)";
             return false;
         }
-        if (argc > 3) 
-        { 
-           std::cout << "Too Many Arguments - (2) Args Total: 1. Account Type, 2. Place Trade Bool" << '\n'; 
-           return false;
-         }
+        if (argc > 3)
+        {
+            std::cout << "Too Many Arguments - (2) Args Total: 1. Account Type, 2. Place Trade Bool" << '\n';
+            return false;
+        }
     }
     return true;
 }
 
-void userInputEmergencyClose(int& emergencyClose)
+void userInputEmergencyClose(int& emergencyClose) noexcept
 {
     while (true)
     {
@@ -54,7 +56,7 @@ void userInputEmergencyClose(int& emergencyClose)
         {
             std::cin >> emergencyClose;
         }
-        catch ( ... ) 
+        catch (...)
         {
             std::cout << "\nWrong Input\n";
             continue;
@@ -65,4 +67,4 @@ void userInputEmergencyClose(int& emergencyClose)
     }
 }
 
-} // fxordermgmt
+}// namespace fxordermgmt

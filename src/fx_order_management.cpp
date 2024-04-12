@@ -3,11 +3,6 @@
 
 #include "fx_order_management.h"
 
-#include "boost/log/trivial.hpp"
-#include "boost/log/utility/setup/console.hpp"
-#include "gain_capital_api/gain_capital_api.h"
-#include "keychain/keychain.h"
-
 #include "json/json.hpp"
 #include <array>
 #include <chrono>
@@ -22,6 +17,11 @@
 #include <valarray>
 #include <vector>
 
+#include "boost/log/trivial.hpp"
+#include "boost/log/utility/setup/console.hpp"
+#include "gain_capital_api/gain_capital_api.h"
+#include "keychain/keychain.h"
+
 #define VAR_DECLS
 #define VAR_DECLS_ORDER
 
@@ -34,9 +34,7 @@
 namespace fxordermgmt
 {
 
-FXOrderManagement::FXOrderManagement() {}
-
-FXOrderManagement::FXOrderManagement(std::string paper_or_live, bool place_trades, int emergency_close, std::string working_directory)
+FXOrderManagement::FXOrderManagement(const std::string& paper_or_live, bool place_trades, int emergency_close, const std::string& working_directory)
     : paper_or_live(paper_or_live), place_trades(place_trades), emergency_close(emergency_close), sys_path(working_directory)
 {
     if (paper_or_live == "PAPER")
@@ -51,9 +49,6 @@ FXOrderManagement::FXOrderManagement(std::string paper_or_live, bool place_trade
         service_id = "Live_Account";
         package = "com.gain_capital_forex.live_account";
     }
-
-    // Optional Boost Logging to STD Output
-    boost::log::add_console_log(std::cout, boost::log::keywords::format = ">> %Message%");
 }
 
 void FXOrderManagement::set_testing_parameters(std::string url)
@@ -66,25 +61,23 @@ bool FXOrderManagement::initialize_order_management()
 {
     fx_utilities = FXUtilities();
     if (! fx_utilities.validate_user_interval(update_interval, update_span, update_frequency_seconds)) { return false; }
-
+    // -------------
     fx_utilities.init_logging(sys_path);
     if (! fx_utilities.setup_password_first_time(paper_or_live, trading_account)) { return false; }
-    // -----------------
-    fx_market_time = FXMarketTime(update_frequency_seconds, fx_utilities);
-    fx_market_time.forex_market_time_setup();
-    // -------------------------------
-    for (std::string symbol : fx_symbols_to_trade) { position_multiplier[symbol] = 1; }
+    // -------------
+    fx_market_time = FXMarketTime(start_hr, end_hr, update_frequency_seconds);
+    if (! fx_market_time.forex_market_time_setup()) { return false; }
+    // -------------
+    for (std::string const& symbol : fx_symbols_to_trade) { position_multiplier[symbol] = 1; }
     live_symbols_list = fx_symbols_to_trade;
-    // -------------------------------
-    if (! fx_market_time.pause_till_market_open()) { return false; }
-
+    // -------------
     if (! gain_capital_session()) { return false; }
     // -------------
     if (emergency_close == 1) { emergency_position_close(); }
-    // -------------------------------
+    // -------------
     output_order_information();
     read_input_information();
-
+    // No Errors
     return true;
 }
 
@@ -94,23 +87,20 @@ bool FXOrderManagement::run_order_management_system()
     {
         time_t time_now = time(NULL);
         BOOST_LOG_TRIVIAL(info) << "FX Order Management - Currently Running" << ctime(&time_now);
-        std::cout << "For Live Updates, See Log File" << std::endl;
-        
+
         // Initialize Price History & Trading Model
         return_price_history(live_symbols_list);
-        for (std::string symbol : execute_list) { initialize_trading_model(symbol); }
-        
-        // Start Loop
+        for (std::string const& symbol : execute_list) { initialize_trading_model(symbol); }
+
         while (true)
         {
-            if (fx_market_time.market_closed())
+            if (fx_market_time.is_market_closed())
             {
-                std::cout << "FX Order Management - Market Closed" << std::endl;
                 BOOST_LOG_TRIVIAL(info) << "FX Order Management - Market Closed";
                 break;
             }
             // ----------------
-            bool success = pause_next_bar();
+            if (! pause_next_bar()) { return false; }
             get_trading_model_signal();
             read_input_information();
             build_trades_map();
@@ -154,30 +144,19 @@ bool FXOrderManagement::gain_capital_session()
 // ==============================================================================================
 // Trading Model
 // ==============================================================================================
-void FXOrderManagement::initialize_trading_model(std::string symbol)
+void FXOrderManagement::initialize_trading_model(const std::string& symbol)
 {
-    TradingModel new_model = TradingModel(historical_data_map[symbol]);
-    trading_model_map[symbol] = new_model;
+    trading_model_map.emplace({{symbol, historical_data_map[symbol]['Open'], historical_data_map[symbol]['High'], historical_data_map[symbol]['Low'],
+                                historical_data_map[symbol]['Close'], historical_data_map[symbol]['Datetime']}});
     BOOST_LOG_TRIVIAL(info) << "FX Order Management - Trading Model Initialized for " << symbol;
 }
 
 void FXOrderManagement::get_trading_model_signal()
 {
-    main_signals = {};
-    TradingModel trading_model_instance;
-    // --------
     for (std::string symbol : execute_list)
     {
-        if (trading_model_map.count(symbol)) { trading_model_instance = trading_model_map[symbol]; }
-        else
-        {
-            initialize_trading_model(symbol);
-            trading_model_instance = trading_model_map[symbol];
-        }
-        trading_model_instance.receive_latest_market_data(historical_data_map[symbol]);
-        int prediction = trading_model_instance.send_trading_signal();
-        main_signals[symbol] = prediction;
-        BOOST_LOG_TRIVIAL(debug) << "Trading Model Output - " << symbol << "; Prediction: " << prediction;
+        if (! trading_model_map.count(symbol)) { initialize_trading_model(symbol); }
+        trading_model_map[symbol].receive_latest_market_data(historical_data_map[symbol]);
     }
 }
 
@@ -187,76 +166,49 @@ void FXOrderManagement::get_trading_model_signal()
 void FXOrderManagement::build_trades_map()
 {
     nlohmann::json trades_map = {};
-
-    std::vector<std::string> symbols_in_main_signals;
-    for (std::unordered_map<std::string, int>::iterator it = main_signals.begin(); it != main_signals.end(); ++it)
-    {
-        symbols_in_main_signals.push_back(it->first);
-    }
     // ------------------------------------
     // Check Account Positions
     open_positions = session.list_open_positions();
-    bool forex_is_exit_only = fx_market_time.forex_market_exit_only();
 
-    if (! forex_is_exit_only)
+    if (! fx_market_time.is_forex_market_close_only())
     {
-        // ------------
         for (auto position : open_positions)
         {
             std::string symbol = position["MarketName"];
             // ------------
-            if (find(symbols_in_main_signals.begin(), symbols_in_main_signals.end(), symbol) != symbols_in_main_signals.end())
+            if (find(execute_list.begin(), execute_list.end(), symbol) != execute_list.end())
             {
-                symbols_in_main_signals.erase(remove(symbols_in_main_signals.begin(), symbols_in_main_signals.end(), symbol),
-                                              symbols_in_main_signals.end());
+                execute_list.erase(remove(execute_list.begin(), execute_list.end(), symbol), execute_list.end());
 
-                int base_quantity;
-                if (position_multiplier.count(symbol)) { base_quantity = round(position_multiplier[symbol] * order_position_size / 1000) * 1000; }
-                else { base_quantity = order_position_size; }
-                int live_quantity = position["Quantity"];
-                std::string direction = position["Direction"];
-                std::string new_direction = (direction == "buy") ? "sell" : "buy";
+                int const base_quantity = (position_multiplier.count(symbol)) ? round(position_multiplier[symbol] * order_position_size / 1000) * 1000 : order_position_size; 
+                int const signal = trading_model_map[symbol].send_trading_signal();
+                int const live_quantity = position["Quantity"];
+                std::string const direction = position["Direction"];
+                std::string const new_direction = (direction == "buy") ? "sell" : "buy";
                 // ---------------------------
                 if (direction == "buy")
                 {
-                    // ------------
-                    if (main_signals[symbol] == 1)
+                    if (signal == 1 && live_quantity < base_quantity)
                     {
-                        // ------------
-                        if (live_quantity < base_quantity)
-                        {
-                            trades_map[symbol] = {
-                                {"Quantity", base_quantity - live_quantity}, {"Direction", direction}, {"Final Quantity", base_quantity}};
-                        }
+                        trades_map[symbol] = {
+                            {"Quantity", base_quantity - live_quantity}, {"Direction", direction}, {"Final Quantity", base_quantity}};
                     }
-                    else if (main_signals[symbol] == 0)
-                    {
-                        trades_map[symbol] = {{"Quantity", live_quantity}, {"Direction", new_direction}, {"Final Quantity", 0}};
-                    }
-                    else
+                    else if (signal == 0) { trades_map[symbol] = {{"Quantity", live_quantity}, {"Direction", new_direction}, {"Final Quantity", 0}}; }
+                    else if (signal == -1)
                     {
                         trades_map[symbol] = {
                             {"Quantity", base_quantity + live_quantity}, {"Direction", new_direction}, {"Final Quantity", base_quantity}};
                     }
                 }
-                // ---------------------------
                 else if (direction == "sell")
                 {
-                    // ------------
-                    if (main_signals[symbol] == -1)
+                    if (signal == -1 && live_quantity < base_quantity)
                     {
-                        // ------------
-                        if (live_quantity < base_quantity)
-                        {
-                            trades_map[symbol] = {
-                                {"Quantity", base_quantity - live_quantity}, {"Direction", direction}, {"Final Quantity", base_quantity}};
-                        }
+                        trades_map[symbol] = {
+                            {"Quantity", base_quantity - live_quantity}, {"Direction", direction}, {"Final Quantity", base_quantity}};
                     }
-                    else if (main_signals[symbol] == 0)
-                    {
-                        trades_map[symbol] = {{"Quantity", live_quantity}, {"Direction", new_direction}, {"Final Quantity", 0}};
-                    }
-                    else
+                    else if (signal == 0) { trades_map[symbol] = {{"Quantity", live_quantity}, {"Direction", new_direction}, {"Final Quantity", 0}}; }
+                    else if (signal == 1)
                     {
                         trades_map[symbol] = {
                             {"Quantity", base_quantity + live_quantity}, {"Direction", new_direction}, {"Final Quantity", base_quantity}};
@@ -265,18 +217,18 @@ void FXOrderManagement::build_trades_map()
             }
         }
         // ---------------------------
-        if (! symbols_in_main_signals.empty())
+        // Open New Positions
+        if (! execute_list.empty())
         {
-            for (int x = 0; x < symbols_in_main_signals.size(); x++)
+            for (auto const& symbol : execute_list)
             {
-                std::string symbol = symbols_in_main_signals[x];
-                int position_signal = main_signals[symbol];
-                int base_quantity;
-                if (position_multiplier.count(symbol)) { base_quantity = round(position_multiplier[symbol] * order_position_size / 1000) * 1000; }
-                else { base_quantity = order_position_size; }
-                if (position_signal != 0 && base_quantity != 0)
+                int const position_signal = trading_model_map[symbol].send_trading_signal();
+                int const base_quantity = (position_multiplier.count(symbol)) ? round(position_multiplier[symbol] * order_position_size / 1000) * 1000
+                                                                              : order_position_size;
+
+                if (position_signal && base_quantity)
                 {
-                    std::string direction = (position_signal == 1) ? "buy" : "sell";
+                    std::string const direction = (position_signal == 1) ? "buy" : "sell";
                     trades_map[symbol] = {{"Quantity", base_quantity}, {"Direction", direction}, {"Final Quantity", base_quantity}};
                 }
             }
@@ -288,19 +240,20 @@ void FXOrderManagement::build_trades_map()
     {
         for (auto position : open_positions)
         {
-            std::string symbol = position["MarketName"];
-            int quantity = position["Quantity"];
-            std::string new_direction = (position["Direction"] == "buy") ? "sell" : "buy";
-            trades_map[symbol] = {{"Quantity", quantity}, {"Direction", new_direction}, {"Final Quantity", 0}};
+            std::string const symbol = position["MarketName"];
+            std::string const new_direction = (position["Direction"] == "buy") ? "sell" : "buy";
+            trades_map[symbol] = {{"Quantity", static_cast<int>(position["Quantity"])}, {"Direction", new_direction}, {"Final Quantity", 0}};
         }
     }
     // ---------------------------
+    // Place Trades
     if (! trades_map.empty())
     {
         execution_loop_count = 0;
         execute_signals(trades_map);
     }
     // ------------
+    // Update Profit Report
     nlohmann::json margin_info = session.get_margin_info();
     equity_total = (! margin_info.empty()) ? static_cast<float>(margin_info["netEquity"]) : 0.0;
     margin_total = (! margin_info.empty()) ? static_cast<float>(margin_info["margin"]) : 0.0;
@@ -315,42 +268,41 @@ void FXOrderManagement::emergency_position_close()
     open_positions = session.list_open_positions();
     for (auto position : open_positions)
     {
-        // ------------
-        std::string symbol = position["MarketName"];
-        int quantity = position["Quantity"];
-        std::string direction = position["Direction"];
-        std::string new_direction = (direction == "buy") ? "sell" : "buy";
+        std::string const symbol = position["MarketName"];
+        int const quantity = position["Quantity"];
+        std::string const direction = position["Direction"];
+        std::string const new_direction = (direction == "buy") ? "sell" : "buy";
         trades_map[symbol] = {{"Quantity", quantity}, {"Direction", new_direction}, {"Final Quantity", 0}};
     }
     // ---------------------------
+    // Place Trades
     if (! trades_map.empty())
     {
         execution_loop_count = 0;
         execute_signals(trades_map);
     }
     // ------------
+    // Update Profit Report
     nlohmann::json margin_info = session.get_margin_info();
     equity_total = (! margin_info.empty()) ? static_cast<float>(margin_info["netEquity"]) : 0.0;
     margin_total = (! margin_info.empty()) ? static_cast<float>(margin_info["margin"]) : 0.0;
     output_order_information();
 }
 
-/*
-This Function is Not Called
-User Has Option to Replace OHLC w/ Tick Data
-*/
-void FXOrderManagement::return_tick_history(std::vector<std::string> symbols_list)
+/*  * This Function is Not Called
+    * User Has Option to Replace OHLC w/ Tick Data */
+void FXOrderManagement::return_tick_history(const std::vector<std::string>& symbols_list)
 {
     std::unordered_map<std::string, nlohmann::json> data = session.get_prices(symbols_list, num_data_points);
 }
 
-void FXOrderManagement::return_price_history(std::vector<std::string> symbols_list)
+void FXOrderManagement::return_price_history(const std::vector<std::string>& symbols_list)
 {
     // Get Historical Forex Data
     BOOST_LOG_TRIVIAL(info) << "FX Order Management - Attempting to Fetch Price History";
     int const WAIT_DURATION = 10;
-    long unsigned int timestamp_now;
-    long unsigned int start = (std::chrono::system_clock::now().time_since_epoch()).count() * std::chrono::system_clock::period::num /
+    std::size_t timestamp_now;
+    std::size_t start = (std::chrono::system_clock::now().time_since_epoch()).count() * std::chrono::system_clock::period::num /
                               std::chrono::system_clock::period::den;
     price_data_update_datetime = {};
     price_data_update_failure = {};
@@ -367,7 +319,7 @@ void FXOrderManagement::return_price_history(std::vector<std::string> symbols_li
             try
             {
                 std::string last_bar_datetime = data[symbol].back()["BarDate"];
-                long unsigned int last_timestamp = std::stoi(last_bar_datetime.substr(6, 10));
+                std::size_t last_timestamp = std::stoi(last_bar_datetime.substr(6, 10));
                 if (last_timestamp >= next_bar_timestamp)
                 {
                     completed_list.push_back(symbol);
@@ -392,28 +344,20 @@ void FXOrderManagement::return_price_history(std::vector<std::string> symbols_li
     }
     // Confirm Latest Data Provided
     // --------------------------------
-    std::vector<long unsigned int> symbol_update_datetimes = {};
-    for (std::unordered_map<std::string, long unsigned int>::iterator it = price_data_update_datetime.begin(); it != price_data_update_datetime.end();
-         ++it)
+    std::vector<std::size_t> symbol_update_datetimes = {};
+    for (auto it = price_data_update_datetime.begin(); it != price_data_update_datetime.end(); ++it)
     {
         symbol_update_datetimes.push_back(it->second);
     }
     last_bar_timestamp =
         (! symbol_update_datetimes.empty()) ? *max_element(symbol_update_datetimes.begin(), symbol_update_datetimes.end()) : last_bar_timestamp;
 
-    for (std::unordered_map<std::string, long unsigned int>::iterator it = price_data_update_datetime.begin(); it != price_data_update_datetime.end();
-         ++it)
+    for (auto it = price_data_update_datetime.begin(); it != price_data_update_datetime.end(); ++it)
     {
         if (it->second != last_bar_timestamp)
         {
             price_data_update_failure.push_back(it->first);
-            try
-            {
-                completed_list.erase(remove(completed_list.begin(), completed_list.end(), it->first), completed_list.end());
-            }
-            catch (...)
-            {
-            }
+            completed_list.erase(remove(completed_list.begin(), completed_list.end(), it->first), completed_list.end());
         }
     }
 
@@ -462,8 +406,8 @@ void FXOrderManagement::return_price_history(std::vector<std::string> symbols_li
 bool FXOrderManagement::pause_next_bar()
 {
     next_bar_timestamp = last_bar_timestamp + update_frequency_seconds;
-    long unsigned int time_next_bar_will_be_ready = next_bar_timestamp + update_frequency_seconds;
-    unsigned int timestamp_now;
+    std::size_t time_next_bar_will_be_ready = next_bar_timestamp + update_frequency_seconds;
+    std::size_t timestamp_now;
     // -----------------------------------
     // Execute Trading Model & Confirm All Data Acquired Properly
     for (int x = 0; x < 5; x++)
@@ -503,18 +447,12 @@ bool FXOrderManagement::pause_next_bar()
     {
         for (std::string symbol : data_error_list)
         {
-            try
-            {
-                live_symbols_list.erase(remove(live_symbols_list.begin(), live_symbols_list.end(), symbol), live_symbols_list.end());
-                price_data_update_datetime.erase(symbol);
+            live_symbols_list.erase(remove(live_symbols_list.begin(), live_symbols_list.end(), symbol), live_symbols_list.end());
+            if (price_data_update_datetime.contains(symbol)) { price_data_update_datetime.erase(symbol); }
 
-                BOOST_LOG_TRIVIAL(error) << "Data Acquisition Error: " << symbol << std::endl;
-                position_multiplier[symbol] = 0;
-                std::cout << "Data Acquisition Error: " << symbol << std::endl;
-            }
-            catch (...)
-            {
-            }
+            BOOST_LOG_TRIVIAL(error) << "Data Acquisition Error: " << symbol << std::endl;
+            position_multiplier[symbol] = 0;
+            std::cout << "Data Acquisition Error: " << symbol << std::endl;
         }
         data_error_list = {};
     }
@@ -537,7 +475,7 @@ void FXOrderManagement::execute_signals(nlohmann::json trade_dict)
 {
     if (place_trades || emergency_close == 1)
     {
-        execution_loop_count += 1;
+        ++execution_loop_count;
         std::vector<std::string> error_list = session.trade_order(trade_dict, "MARKET");
         if (! error_list.empty())
         {
@@ -639,8 +577,7 @@ void FXOrderManagement::verify_trades_opened(nlohmann::json trade_dict)
 // ==============================================================================================
 bool FXOrderManagement::read_input_information()
 {
-    std::string date = fx_utilities.get_todays_date();
-    std::string file_name = sys_path + "/" + date + "_FX_Order_Deletion.json";
+    std::string const file_name = sys_path + "/" + fx_utilities.get_todays_date() + "_FX_Order_Deletion.json";
     nlohmann::json data;
     std::vector<std::string> double_check = live_symbols_list;
     try
@@ -655,14 +592,12 @@ bool FXOrderManagement::read_input_information()
     for (nlohmann::json::iterator it = data.begin(); it != data.end(); ++it)
     {
         nlohmann::json json_value = it.value();
-        if (json_value.contains("Close Immediately"))
+        if (json_value.contains("Close Immediately") && json_value["Close Immediately"])
         {
-            if (json_value["Close Immediately"] == true) { main_signals[it.key()] = 0; }
+            // Fix This
+            position_multiplier[it.key()] = 0;
         }
-        if (json_value.contains("Close On Trade Signal Change"))
-        {
-            if (json_value["Close On Trade Signal Change"] == true) { position_multiplier[it.key()] = 0; }
-        }
+        if (json_value.contains("Close On Trade Signal Change") && json_value["Close On Trade Signal Change"]) { position_multiplier[it.key()] = 0; }
         double_check.erase(remove(double_check.begin(), double_check.end(), it.key()), double_check.end());
     }
 
@@ -686,19 +621,19 @@ bool FXOrderManagement::output_order_information()
     nlohmann::json current_performance = {};
     nlohmann::json current_positions = {};
     time_t time_now = time(NULL);
-    std::string time_str = ctime(&time_now);
+    std::string const time_str = ctime(&time_now);
     float profit = 0;
     float profit_percent = 0;
 
     for (auto position : open_positions)
     {
-        std::string market_name = position["MarketName"];
-        int direction = (position["Direction"] == "buy") ? 1 : -1;
-        float entry_price = position["Price"];
-        int quantity = position["Quantity"];
+        std::string const market_name = position["MarketName"];
+        int const direction = (position["Direction"] == "buy") ? 1 : -1;
+        float const entry_price = position["Price"];
+        int const quantity = position["Quantity"];
 
         std::unordered_map<std::string, nlohmann::json> response = session.get_prices({market_name});
-        float current_price = (! response.empty()) ? static_cast<float>(response[market_name][0]["Price"]) : 0.0;
+        float const current_price = (! response.empty()) ? static_cast<float>(response[market_name][0]["Price"]) : 0.0;
 
         profit = round((current_price - entry_price) * 100000) / 100000 * direction;
         profit_percent = (entry_price != 0) ? round(profit * 10000 / entry_price) / 100 : 0;
@@ -712,8 +647,8 @@ bool FXOrderManagement::output_order_information()
     }
     // ---------------------------
     if (init_equity == 0) { init_equity = equity_total; }
-    float total_profit = round((equity_total - init_equity) * 100) / 100;
-    float total_profit_percent = (init_equity != 0) ? round(profit * 10000 / init_equity) / 100 : 0;
+    float const total_profit = round((equity_total - init_equity) * 100) / 100;
+    float const total_profit_percent = (init_equity != 0) ? round(profit * 10000 / init_equity) / 100 : 0;
 
     current_performance["Performance Information"] = {{"Initial Funds", init_equity},
                                                       {"Current Funds", equity_total},
@@ -724,9 +659,9 @@ bool FXOrderManagement::output_order_information()
     current_performance["Position Information"] = current_positions;
     current_performance["Last Updated"] = time_str;
 
-    std::string date = fx_utilities.get_todays_date();
-    std::string file_name = sys_path + "/" + date + "_FX_Order_Information.json";
-    std::string output_string = current_performance.dump(4);
+    std::string const date = fx_utilities.get_todays_date();
+    std::string const file_name = sys_path + "/" + date + "_FX_Order_Information.json";
+    std::string const output_string = current_performance.dump(4);
     try
     {
         std::ofstream out(file_name);
