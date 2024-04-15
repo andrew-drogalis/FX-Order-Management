@@ -23,7 +23,7 @@ namespace fxordermgmt
     }
 }
 
-[[nodiscard]] bool validateMainParameters(int argc, char* argv[], std::string& ACCOUNT, bool& PLACE_TRADES) noexcept
+[[nodiscard]] bool validateMainParameters(int argc, char* argv[], std::string& ACCOUNT, bool& PLACE_TRADES)
 {
     if (argc == 2) { ACCOUNT = argv[1]; }
     else if (argc >= 3)
@@ -47,7 +47,7 @@ namespace fxordermgmt
     return true;
 }
 
-void userInputEmergencyClose(int& emergencyClose) noexcept
+void userInputEmergencyClose(int& emergencyClose)
 {
     while (true)
     {

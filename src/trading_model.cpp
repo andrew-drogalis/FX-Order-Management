@@ -3,9 +3,8 @@
 
 #include "trading_model.h"
 
-#include <string>
-#include <unordered_map>
-#include <vector>
+#include <stdlib.h>// for rand, RAND_MAX
+#include <vector>  // for vector
 
 namespace fxordermgmt
 {
@@ -18,7 +17,7 @@ TradingModel::TradingModel(const std::vector<float>& openPrices, const std::vect
 
 void TradingModel::receive_latest_market_data(const std::vector<float>& openPrices, const std::vector<float>& highPrices,
                                               const std::vector<float>& lowPrices, const std::vector<float>& closePrices,
-                                              const std::vector<float>& dateTime) noexcept
+                                              const std::vector<float>& dateTime)
 {
     // Update the market data with each update interval
     this->openPrices = openPrices;

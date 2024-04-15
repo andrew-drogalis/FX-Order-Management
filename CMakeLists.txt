@@ -88,7 +88,7 @@ include_directories(${Boost_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 add_library(gain_capital_api SHARED IMPORTED)
 
 set_target_properties(gain_capital_api PROPERTIES IMPORTED_LOCATION
-                                                  ${CMAKE_CURRENT_SOURCE_DIR}/lib/libgain_capital_api.so.1.0.0)
+                                                  ${CMAKE_CURRENT_SOURCE_DIR}/lib/libgain_capital_api.so.1.0.2)
 
 target_link_libraries(
   ${PROJECT_NAME}

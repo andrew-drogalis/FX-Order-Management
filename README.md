@@ -41,46 +41,41 @@ Please see a link to required dependencies [below](#Dependencies). If you are in
 
 ### Storing User Credentials
 
-The '_INIT' macro will initialize the variables ONLY if they have not been initialized, otherwise they will just be prototype declarations. This prevents any redefinition compiler errors.
-
 The user should replace the usernames and API key, but the password should not be stored in plain text. The program will prompt the user to assign a new password if one doesn't already exist in the keyring.
 
 ```c
     namespace fxordermgmt {
 
-    _DECL std::string const account_username _INIT("BLANK");
+    extern std::string const account_username = "BLANK";
 
-    _DECL std::string const paper_account_username _INIT("BLANK");
+    extern std::string const paper_account_username = "BLANK";
 
-    _DECL std::string const forex_api_key _INIT("BLANK");
+    extern std::string const forex_api_key = "BLANK";
 
     // Store Passwords in Keyring.
-
     }
 ```
 
 ### Updating Order Parameters
-
-The '_INIT' macro and '_INIT_VECT' macro will initialize the variables ONLY if they have not been initialized, otherwise they will just be prototype declarations. This prevents any redefinition compiler errors.
 
 The user can replace the order parameters with any valid combination as described in the Gain Capital API documents. In the case of a typo, the code provides appropriate checks to confirm the user is compliant with the documentation.
 
 ```c
     namespace fxordermgmt {
 
-    _DECL std::vector<std::string> const fx_symbols_to_trade _INIT_VECT("USD/JPY", "EUR/USD", "USD/CHF", "USD/CAD");
+    extern std::vector<std::string> const fx_symbols_to_trade = {"USD/JPY", "EUR/USD", "USD/CHF", "USD/CAD"};
 
-    _DECL int const order_position_size _INIT(2'000); // Lot Size
+    extern int const order_position_size = 2'000; // Lot Size
 
-    _DECL int const num_data_points _INIT(1'000); // Historical Data
+    extern int const num_data_points = 1'000; // Historical Data
 
-    _DECL std::string update_interval _INIT("MINUTE"); // MINUTE or HOUR
+    extern std::string update_interval = "MINUTE"; // MINUTE or HOUR
 
-    _DECL int const update_span _INIT(5); // Span of Interval e.g. 5 Minutes
+    extern int const update_span = 5; // Span of Interval e.g. 5 Minutes
 
-    _DECL int const start_hr _INIT(8); // User defined Start Time in London Time (Forex Trading on London exchange)
+    extern int const start_hr = 8; // User defined Start Time in London Time (Forex Trading on London exchange)
 
-    _DECL int const end_hr _INIT(20);  // User defined End Time in London Time (Forex Trading on London exchange)
+    extern int const end_hr = 20;  // User defined End Time in London Time (Forex Trading on London exchange)
     
     }
 ```
@@ -119,7 +114,7 @@ namespace fxordermgmt {
 
 void TradingModel::receive_latest_market_data(const std::vector<float>& openPrices, const std::vector<float>& highPrices,
                                               const std::vector<float>& lowPrices, const std::vector<float>& closePrices,
-                                              const std::vector<float>& dateTime) noexcept
+                                              const std::vector<float>& dateTime)
 {
     // Update the market data with each update interval
     this->openPrices = openPrices;

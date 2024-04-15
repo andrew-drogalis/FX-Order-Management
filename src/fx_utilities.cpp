@@ -3,9 +3,12 @@
 
 #include "fx_utilities.h"
 
-#include <exception>
-#include <iostream>
-#include <string>
+#include <algorithm>// for find, tran...
+#include <ctime>    // for time, loca...
+#include <ctype.h>  // for toupper
+#include <iostream> // for basic_ostream
+#include <string>   // for basic_string
+#include <vector>   // for vector
 
 #include "boost/log/trivial.hpp"
 #include "boost/log/utility/setup/common_attributes.hpp"
@@ -15,9 +18,7 @@
 namespace fxordermgmt
 {
 
-FXUtilities::FXUtilities() {}
-
-bool FXUtilities::setup_password_first_time(const std::string& account_type, const std::string& username) noexcept
+bool FXUtilities::setup_password_first_time(const std::string& account_type, const std::string& username)
 {
     std::string const service_id_test = "Test_Account", service_id_live = "Live_Account", package_test = "com.gain_capital_forex.test_account",
                       package_live = "com.gain_capital_forex.live_account";
@@ -79,7 +80,7 @@ bool FXUtilities::setup_password_first_time(const std::string& account_type, con
     return true;
 }
 
-void FXUtilities::init_logging(const std::string& working_directory) noexcept
+void FXUtilities::init_logging(const std::string& working_directory)
 {
     FXUtilities fxUtils;
     std::string const file_name = working_directory + "/" + fxUtils.get_todays_date() + "_FX_Order_Management.log";
@@ -99,7 +100,7 @@ std::string FXUtilities::get_todays_date() noexcept
     return DATE_TODAY;
 }
 
-bool FXUtilities::validate_user_interval(std::string update_interval, int update_span, int& update_frequency_seconds) noexcept
+bool FXUtilities::validate_user_interval(std::string update_interval, int update_span, int& update_frequency_seconds)
 {
     transform(update_interval.begin(), update_interval.end(), update_interval.begin(), ::toupper);
 

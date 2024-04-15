@@ -4,9 +4,7 @@
 #ifndef TRADING_MODEL_H
 #define TRADING_MODEL_H
 
-#include <string>
-#include <unordered_map>
-#include <vector>
+#include <vector>// for vector
 
 namespace fxordermgmt
 {
@@ -17,10 +15,10 @@ class TradingModel
     TradingModel() = default;
 
     TradingModel(const std::vector<float>& openPrices, const std::vector<float>& highPrices, const std::vector<float>& lowPrices,
-                 const std::vector<float>& closePrices, const std::vector<float>& dateTime) noexcept;
+                 const std::vector<float>& closePrices, const std::vector<float>& dateTime);
 
     void receive_latest_market_data(const std::vector<float>& openPrices, const std::vector<float>& highPrices, const std::vector<float>& lowPrices,
-                                    const std::vector<float>& closePrices, const std::vector<float>& dateTime) noexcept;
+                                    const std::vector<float>& closePrices, const std::vector<float>& dateTime);
 
     [[nodiscard]] int send_trading_signal();
 

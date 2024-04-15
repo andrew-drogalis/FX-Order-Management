@@ -15,13 +15,13 @@ class FXUtilities
   public:
     FXUtilities() noexcept = default;
 
-    [[nodiscard]] bool setup_password_first_time(const std::string& account_type, const std::string& username) noexcept;
+    [[nodiscard]] bool setup_password_first_time(const std::string& account_type, const std::string& username);
 
-    static void init_logging(const std::string& working_directory) noexcept;
+    static void init_logging(const std::string& working_directory);
 
     [[nodiscard]] std::string get_todays_date() noexcept;
 
-    [[nodiscard]] bool validate_user_interval(std::string update_interval, int update_span, int& update_frequency_seconds) noexcept;
+    [[nodiscard]] bool validate_user_interval(std::string update_interval, int update_span, int& update_frequency_seconds);
 };
 
 }// namespace fxordermgmt

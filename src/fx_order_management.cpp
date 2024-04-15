@@ -3,27 +3,24 @@
 
 #include "fx_order_management.h"
 
-#include "json/json.hpp"
-#include <array>
-#include <chrono>
-#include <ctime>
-#include <exception>
-#include <format>
-#include <fstream>
-#include <iostream>
-#include <string>
-#include <unistd.h>
-#include <unordered_map>
-#include <valarray>
-#include <vector>
+#include <algorithm>       // for remove, find
+#include <bits/chrono.h>   // for system_clock
+#include <ctime>           // for size_t, ctime
+#include <fstream>         // for basic_ostream
+#include <initializer_list>// for initializer_list
+#include <iostream>        // for cerr, cout
+#include <math.h>          // for round
+#include <string>          // for operator==, hash
+#include <unistd.h>        // for sleep, NULL
+#include <unordered_map>   // for unordered_map
+#include <utility>         // for pair
+#include <vector>          // for vector
 
 #include "boost/log/trivial.hpp"
 #include "boost/log/utility/setup/console.hpp"
 #include "gain_capital_api/gain_capital_api.h"
 #include "keychain/keychain.h"
-
-#define VAR_DECLS
-#define VAR_DECLS_ORDER
+#include "json/json.hpp"
 
 #include "credentials.h"
 #include "fx_market_time.h"
@@ -68,15 +65,23 @@ bool FXOrderManagement::initialize_order_management()
     fx_market_time = FXMarketTime(start_hr, end_hr, update_frequency_seconds);
     if (! fx_market_time.forex_market_time_setup()) { return false; }
     // -------------
-    for (std::string const& symbol : fx_symbols_to_trade) { position_multiplier[symbol] = 1; }
+    for (std::string const& symbol : fx_symbols_to_trade)
+    {
+        position_multiplier[symbol] = 1;
+        open_prices_map[symbol].reserve(num_data_points);
+        high_prices_map[symbol].reserve(num_data_points);
+        low_prices_map[symbol].reserve(num_data_points);
+        close_prices_map[symbol].reserve(num_data_points);
+        datetime_map[symbol].reserve(num_data_points);
+    }
     live_symbols_list = fx_symbols_to_trade;
     // -------------
     if (! gain_capital_session()) { return false; }
     // -------------
     if (emergency_close == 1) { emergency_position_close(); }
     // -------------
-    output_order_information();
-    read_input_information();
+    if (! output_order_information()) { return false; }
+    if (! read_input_information()) { return false; }
     // No Errors
     return true;
 }
@@ -102,7 +107,7 @@ bool FXOrderManagement::run_order_management_system()
             // ----------------
             if (! pause_next_bar()) { return false; }
             get_trading_model_signal();
-            read_input_information();
+            if (! read_input_information()) { return false; }
             build_trades_map();
 
             BOOST_LOG_TRIVIAL(info) << "FX Order Management - Loop Completed";
@@ -146,8 +151,8 @@ bool FXOrderManagement::gain_capital_session()
 // ==============================================================================================
 void FXOrderManagement::initialize_trading_model(const std::string& symbol)
 {
-    trading_model_map.emplace({{symbol, historical_data_map[symbol]['Open'], historical_data_map[symbol]['High'], historical_data_map[symbol]['Low'],
-                                historical_data_map[symbol]['Close'], historical_data_map[symbol]['Datetime']}});
+    trading_model_map.emplace(symbol, TradingModel {open_prices_map[symbol], high_prices_map[symbol], low_prices_map[symbol],
+                                                    close_prices_map[symbol], datetime_map[symbol]});
     BOOST_LOG_TRIVIAL(info) << "FX Order Management - Trading Model Initialized for " << symbol;
 }
 
@@ -156,7 +161,8 @@ void FXOrderManagement::get_trading_model_signal()
     for (std::string symbol : execute_list)
     {
         if (! trading_model_map.count(symbol)) { initialize_trading_model(symbol); }
-        trading_model_map[symbol].receive_latest_market_data(historical_data_map[symbol]);
+        trading_model_map[symbol].receive_latest_market_data(open_prices_map[symbol], high_prices_map[symbol], low_prices_map[symbol],
+                                                             close_prices_map[symbol], datetime_map[symbol]);
     }
 }
 
@@ -180,7 +186,8 @@ void FXOrderManagement::build_trades_map()
             {
                 execute_list.erase(remove(execute_list.begin(), execute_list.end(), symbol), execute_list.end());
 
-                int const base_quantity = (position_multiplier.count(symbol)) ? round(position_multiplier[symbol] * order_position_size / 1000) * 1000 : order_position_size; 
+                int const base_quantity = (position_multiplier.count(symbol)) ? round(position_multiplier[symbol] * order_position_size / 1000) * 1000
+                                                                              : order_position_size;
                 int const signal = trading_model_map[symbol].send_trading_signal();
                 int const live_quantity = position["Quantity"];
                 std::string const direction = position["Direction"];
@@ -257,7 +264,7 @@ void FXOrderManagement::build_trades_map()
     nlohmann::json margin_info = session.get_margin_info();
     equity_total = (! margin_info.empty()) ? static_cast<float>(margin_info["netEquity"]) : 0.0;
     margin_total = (! margin_info.empty()) ? static_cast<float>(margin_info["margin"]) : 0.0;
-    output_order_information();
+    if (! output_order_information()) {}
 }
 
 void FXOrderManagement::emergency_position_close()
@@ -286,11 +293,11 @@ void FXOrderManagement::emergency_position_close()
     nlohmann::json margin_info = session.get_margin_info();
     equity_total = (! margin_info.empty()) ? static_cast<float>(margin_info["netEquity"]) : 0.0;
     margin_total = (! margin_info.empty()) ? static_cast<float>(margin_info["margin"]) : 0.0;
-    output_order_information();
+    if (! output_order_information()) {}
 }
 
 /*  * This Function is Not Called
-    * User Has Option to Replace OHLC w/ Tick Data */
+ * User Has Option to Replace OHLC w/ Tick Data */
 void FXOrderManagement::return_tick_history(const std::vector<std::string>& symbols_list)
 {
     std::unordered_map<std::string, nlohmann::json> data = session.get_prices(symbols_list, num_data_points);
@@ -303,7 +310,7 @@ void FXOrderManagement::return_price_history(const std::vector<std::string>& sym
     int const WAIT_DURATION = 10;
     std::size_t timestamp_now;
     std::size_t start = (std::chrono::system_clock::now().time_since_epoch()).count() * std::chrono::system_clock::period::num /
-                              std::chrono::system_clock::period::den;
+                        std::chrono::system_clock::period::den;
     price_data_update_datetime = {};
     price_data_update_failure = {};
     std::unordered_map<std::string, nlohmann::json> data;
@@ -371,29 +378,20 @@ void FXOrderManagement::return_price_history(const std::vector<std::string>& sym
     for (std::string symbol : completed_list)
     {
         nlohmann::json ohlc_data = data[symbol];
-        int data_length = ohlc_data.size();
+        int const data_length = ohlc_data.size();
         if (data_length >= num_data_points)
         {
             execute_list.push_back(symbol);
-            std::vector<float> open_data = {};
-            std::vector<float> high_data = {};
-            std::vector<float> low_data = {};
-            std::vector<float> close_data = {};
-            std::vector<float> datetime_data = {};
             // ------------
             for (int x = 0; x < num_data_points; x++)
             {
                 int const x1 = data_length - num_data_points + x;
-                std::string bar_datetime = ohlc_data[x1]["BarDate"];
-
-                open_data.push_back(ohlc_data[x1]["Open"]);
-                high_data.push_back(ohlc_data[x1]["High"]);
-                low_data.push_back(ohlc_data[x1]["Low"]);
-                close_data.push_back(ohlc_data[x1]["Close"]);
-                datetime_data.push_back(std::stof(bar_datetime.substr(6, 10)));
+                open_prices_map[symbol][x] = ohlc_data[x1]["Open"];
+                high_prices_map[symbol][x] = ohlc_data[x1]["High"];
+                low_prices_map[symbol][x] = ohlc_data[x1]["Low"];
+                close_prices_map[symbol][x] = ohlc_data[x1]["Close"];
+                datetime_map[symbol][x] = std::stof(static_cast<std::string>(ohlc_data[x1]["BarDate"]).substr(6, 10));
             }
-            historical_data_map[symbol] = {
-                {"Open", open_data}, {"High", high_data}, {"Low", low_data}, {"Close", close_data}, {"Datetime", datetime_data}};
         }
         else
         {
@@ -422,7 +420,7 @@ bool FXOrderManagement::pause_next_bar()
                 if (! execute_list.empty())
                 {
                     get_trading_model_signal();
-                    read_input_information();
+                    if (! read_input_information()) { return false; }
                     build_trades_map();
                 }
             }

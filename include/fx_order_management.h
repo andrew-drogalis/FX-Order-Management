@@ -4,16 +4,17 @@
 #ifndef FX_ORDER_MANAGEMENT_H
 #define FX_ORDER_MANAGEMENT_H
 
-#include "fx_market_time.h"
-#include "fx_utilities.h"
+#include <cstddef>      // for size_t
+#include <string>       // for hash, string, allocator
+#include <unordered_map>// for unordered_map
+#include <vector>       // for vector
+
 #include "gain_capital_api/gain_capital_api.h"
 #include "trading_model.h"
-
 #include "json/json.hpp"
-#include <string>
-#include <unordered_map>
-#include <vector>
 
+#include "fx_market_time.h"
+#include "fx_utilities.h"
 namespace fxordermgmt
 {
 
@@ -54,7 +55,11 @@ class FXOrderManagement
 
     // For Trading Indicator
     std::unordered_map<std::string, TradingModel> trading_model_map;
-    std::unordered_map<std::string, std::unordered_map<std::string, std::vector<float>>> historical_data_map;
+    std::unordered_map<std::string, std::vector<float>> open_prices_map;
+    std::unordered_map<std::string, std::vector<float>> high_prices_map;
+    std::unordered_map<std::string, std::vector<float>> low_prices_map;
+    std::unordered_map<std::string, std::vector<float>> close_prices_map;
+    std::unordered_map<std::string, std::vector<float>> datetime_map;
 
     // Build Trades Map
     std::unordered_map<std::string, std::unordered_map<std::string, std::string>> trades_map;
@@ -109,7 +114,7 @@ class FXOrderManagement
 
     void return_tick_history(const std::vector<std::string>& symbols_list);
 
-    void return_price_history(const std::vector<std::string>& symbols_list) noexcept;
+    void return_price_history(const std::vector<std::string>& symbols_list);
 
     [[nodiscard]] bool pause_next_bar();
 

@@ -23,20 +23,20 @@ class GCapiClient
     std::string client_account_id = "";
     std::unordered_map<std::string, int> market_id_map;
 
-    GCapiClient() noexcept = default;
+    GCapiClient() = default;
 
-    GCapiClient(const std::string& username, const std::string& password, const std::string& appkey) noexcept;
+    GCapiClient(const std::string& username, const std::string& password, const std::string& appkey);
 
-    ~GCapiClient() noexcept = default;
+    ~GCapiClient() = default;
 
     // Move ONLY | No Copy Constructor 
     GCapiClient(const GCapiClient& obj) = delete;
 
     GCapiClient& operator=(const GCapiClient& obj) = delete;
 
-    GCapiClient(GCapiClient&& obj) noexcept = default;
+    GCapiClient(GCapiClient&& obj) = default;
 
-    GCapiClient& operator=(GCapiClient&& obj) noexcept = default;
+    GCapiClient& operator=(GCapiClient&& obj) = default;
 
     // =================================================================================================================
     // AUTHENTICATION
@@ -54,13 +54,13 @@ class GCapiClient
 
     static void initialize_logging_file(const std::string& file_path, const std::string& file_name, std::string severity = "debug");
 
-    [[nodiscard]] bool validate_session_header() const noexcept;
+    [[nodiscard]] bool validate_session_header() const;
 
-    [[nodiscard]] bool validate_auth_payload() const noexcept;
+    [[nodiscard]] bool validate_auth_payload() const;
 
     [[nodiscard]] bool validate_account_ids() const noexcept;
 
-    void set_testing_rest_urls(const std::string& url) noexcept;
+    void set_testing_rest_urls(const std::string& url);
 
     // =================================================================================================================
     // API CALLS
