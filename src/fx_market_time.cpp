@@ -42,9 +42,9 @@ bool FXMarketTime::forex_market_time_setup()
     // --------
     set_timezone_offset();
     int start_days_adjustment = 0, end_days_adjustment = 0;
-    correct_start_and_end_offset(tz_offset, start_days_adjustment, end_days_adjustment);
+    correct_start_and_end_hours(tz_offset, start_days_adjustment, end_days_adjustment);
     // --------
-    is_local_time_within_market_hours(start_days_adjustment, end_days_adjustment);
+    wait_till_market_is_open(start_days_adjustment, end_days_adjustment);
     set_trading_time_bounds(tz_offset_seconds);
     // No Errors -> return true;
     return true;
@@ -59,7 +59,7 @@ void FXMarketTime::set_timezone_offset()
     tz_offset_seconds = -tz_offset * 3600;
 }
 
-void FXMarketTime::correct_start_and_end_offset(int offset, int& start_days_adjustment, int& end_days_adjustment)
+void FXMarketTime::correct_start_and_end_hours(int offset, int& start_days_adjustment, int& end_days_adjustment)
 {
     start_hr += offset % 24;
     end_hr += offset % 24;
@@ -86,7 +86,7 @@ void FXMarketTime::correct_start_and_end_offset(int offset, int& start_days_adju
     }
 }
 
-void FXMarketTime::is_local_time_within_market_hours(int& start_days_adjustment, int& end_days_adjustment)
+void FXMarketTime::wait_till_market_is_open(int& start_days_adjustment, int& end_days_adjustment)
 {
     time_t now = time(0);
     struct tm* now_local = localtime(&now);
@@ -99,10 +99,9 @@ void FXMarketTime::is_local_time_within_market_hours(int& start_days_adjustment,
     }
     else
     {
-        // Fix this
-        int seconds_to_wait = (! start_days_adjustment) ? (start_hr - local_hour) : 0;
-        seconds_to_wait *= 3600;
-        pause_till_market_open(seconds_to_wait);
+        // Wait till market starts
+        int const seconds_to_wait = (local_hour < start_hr) ? (start_hr - local_hour) * 3600 : (start_hr + 24 - local_hour) * 3600;
+        pause_till_market_open(seconds_to_wait);     
     }
     // --------
     bool market_is_open = true;
@@ -115,7 +114,7 @@ void FXMarketTime::is_local_time_within_market_hours(int& start_days_adjustment,
         if (temp_tz_offset != tz_offset)
         {
             int difference = tz_offset - temp_tz_offset;
-            correct_start_and_end_offset(difference, start_days_adjustment, end_days_adjustment);
+            correct_start_and_end_hours(difference, start_days_adjustment, end_days_adjustment);
         }
         now = time(0);
         now_local = localtime(&now);
@@ -150,10 +149,11 @@ void FXMarketTime::set_trading_time_bounds(int offset_seconds)
     /* Set the Official Start & End Times
        FX Trading will stop (2) minutes before official end time */
     ch::time_point time_now = ch::system_clock::now();
+    int const trade_hours_duration = end_hr - start_hr;
     // --------
-    FX_market_start = ((ch::floor<ch::days>(time_now) + ch::hours {start_hr}).time_since_epoch()).count() * 3600 + offset_seconds;
-    FX_market_end = ((ch::floor<ch::days>(time_now) + ch::hours {end_hr - 1} + ch::minutes {58}).time_since_epoch()).count() * 60 + offset_seconds;
-    market_close_time = ((ch::floor<ch::days>(time_now) + ch::hours {end_hr}).time_since_epoch()).count() * 3600 + offset_seconds;
+    FX_market_start = ch::floor<ch::seconds>(time_now).time_since_epoch().count() + offset_seconds;
+    FX_market_end = ((ch::floor<ch::seconds>(time_now) + ch::hours {trade_hours_duration - 1} + ch::minutes {58}).time_since_epoch()).count() * 60 + offset_seconds;
+    market_close_time = ((ch::floor<ch::seconds>(time_now) + ch::hours {trade_hours_duration}).time_since_epoch()).count() * 3600 + offset_seconds;
 }
 
 void FXMarketTime::set_testing_parameters() noexcept

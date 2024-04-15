@@ -22,14 +22,14 @@ class FXMarketTime
 
     void set_timezone_offset();
 
-    void correct_start_and_end_offset(int offset, int& start_days_adjustment, int& end_days_adjustment);
+    void correct_start_and_end_hours(int offset, int& start_days_adjustment, int& end_days_adjustment);
 
-    void is_local_time_within_market_hours(int& start_days_adjustment, int& end_days_adjustment);
-
-    void set_trading_time_bounds(int offset_seconds);
+    void wait_till_market_is_open(int& start_days_adjustment, int& end_days_adjustment);
 
     [[nodiscard]] bool is_market_open_today(const std::string& todays_date, int start_days_adjustment, int end_days_adjustment, int day_of_week);
 
+    void set_trading_time_bounds(int offset_seconds);
+    
     void set_testing_parameters() noexcept;
 
     void pause_till_market_open(float seconds_to_wait) const noexcept;
