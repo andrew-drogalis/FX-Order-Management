@@ -8,7 +8,6 @@
 #include <chrono>       // for __time_zone_representation, zoned_time, cur...
 #include <cmath>        // for round
 #include <format>       // for format, format_string
-#include <iostream>     // for operator<<, basic_ostream, cerr, cout
 #include <ratio>        // for ratio
 #include <string>       // for allocator, basic_string, char_traits, opera...
 #include <string_view>  // for basic_string_view
@@ -16,12 +15,14 @@
 #include <unistd.h>     // for sleep
 #include <vector>       // for vector
 
+#include "boost/log/trivial.hpp"              // for BOOST_LOG_TRIVIAL
+
 namespace fxordermgmt
 {
 
 namespace ch = std::chrono;
 
-FXMarketTime::FXMarketTime(int start_hr, int end_hr, int update_frequency_seconds)
+FXMarketTime::FXMarketTime(int start_hr, int end_hr, int update_frequency_seconds) noexcept
     : start_hr(start_hr), end_hr(end_hr), update_frequency_seconds(update_frequency_seconds)
 {
 }
@@ -30,12 +31,12 @@ bool FXMarketTime::forex_market_time_setup()
 {
     if (end_hr <= start_hr)
     {
-        std::cerr << "Fatal Error: End Time is less than Start Time.";
+        BOOST_LOG_TRIVIAL(error) << "Fatal Error: End Time is less than Start Time.";
         return false;
     }
     if (end_hr > 24 || end_hr < 0 || start_hr > 24 || start_hr < 0)
     {
-        std::cerr << "Fatal Error: Provide Value Between 0 and 24.";
+        BOOST_LOG_TRIVIAL(error) << "Fatal Error: Provide Value Between 0 and 24.";
         return false;
     }
     if (fx_testing) { return true; }
@@ -59,7 +60,7 @@ void FXMarketTime::set_timezone_offset()
     tz_offset_seconds = -tz_offset * 3600;
 }
 
-void FXMarketTime::correct_start_and_end_hours(int offset, int& start_days_adjustment, int& end_days_adjustment)
+void FXMarketTime::correct_start_and_end_hours(int offset, int& start_days_adjustment, int& end_days_adjustment) noexcept
 {
     start_hr += offset % 24;
     end_hr += offset % 24;
@@ -101,7 +102,7 @@ void FXMarketTime::wait_till_market_is_open(int& start_days_adjustment, int& end
     {
         // Wait till market starts
         int const seconds_to_wait = (local_hour < start_hr) ? (start_hr - local_hour) * 3600 : (start_hr + 24 - local_hour) * 3600;
-        pause_till_market_open(seconds_to_wait);     
+        pause_till_market_open(seconds_to_wait);
     }
     // --------
     bool market_is_open = true;
@@ -125,7 +126,7 @@ void FXMarketTime::wait_till_market_is_open(int& start_days_adjustment, int& end
     } while (! market_is_open);
 }
 
-bool FXMarketTime::is_market_open_today(const std::string& todays_date, int start_days_adjustment, int end_days_adjustment, int day_of_week)
+bool FXMarketTime::is_market_open_today(std::string const& todays_date, int start_days_adjustment, int end_days_adjustment, int day_of_week)
 {
     // Holidays Must Be Updated as Required
     std::vector<std::string> holidays = {"2024_01_01", "2024_01_15", "2024_02_19", "2024_03_29", "2024_05_27", "2024_06_19",
@@ -144,7 +145,7 @@ bool FXMarketTime::is_market_open_today(const std::string& todays_date, int star
     else { return false; }
 }
 
-void FXMarketTime::set_trading_time_bounds(int offset_seconds)
+void FXMarketTime::set_trading_time_bounds(int offset_seconds) noexcept
 {
     /* Set the Official Start & End Times
        FX Trading will stop (2) minutes before official end time */
@@ -152,7 +153,8 @@ void FXMarketTime::set_trading_time_bounds(int offset_seconds)
     int const trade_hours_duration = end_hr - start_hr;
     // --------
     FX_market_start = ch::floor<ch::seconds>(time_now).time_since_epoch().count() + offset_seconds;
-    FX_market_end = ((ch::floor<ch::seconds>(time_now) + ch::hours {trade_hours_duration - 1} + ch::minutes {58}).time_since_epoch()).count() * 60 + offset_seconds;
+    FX_market_end = ((ch::floor<ch::seconds>(time_now) + ch::hours {trade_hours_duration - 1} + ch::minutes {58}).time_since_epoch()).count() * 60 +
+                    offset_seconds;
     market_close_time = ((ch::floor<ch::seconds>(time_now) + ch::hours {trade_hours_duration}).time_since_epoch()).count() * 3600 + offset_seconds;
 }
 
@@ -164,9 +166,9 @@ void FXMarketTime::set_testing_parameters() noexcept
     FX_market_end = market_close_time = time_now + (2 * update_frequency_seconds) + 10;
 }
 
-void FXMarketTime::pause_till_market_open(float seconds_to_wait) const noexcept
+void FXMarketTime::pause_till_market_open(int seconds_to_wait) const noexcept
 {
-    std::cout << "Market Closed; Waiting for Market Open; Will be waiting for " << round(seconds_to_wait / 36) / 100 << " Hours...\n";
+    BOOST_LOG_TRIVIAL(info) << "Market Closed; Waiting for Market Open; Will be waiting for " << roundf(seconds_to_wait / 36) / 100 << " Hours...\n";
     if (seconds_to_wait > 0) { sleep(seconds_to_wait); }
 }
 

@@ -10,7 +10,7 @@
 namespace fxordermgmt
 {
 
-extern std::vector<std::string> const fx_symbols_to_trade = {"USD/JPY", "EUR/USD", "USD/CHF", "USD/CAD"};
+extern std::vector<std::string> fx_symbols_to_trade = {"USD/JPY", "EUR/USD", "USD/CHF", "USD/CAD"};
 
 extern int const order_position_size = 2'000;// Lot Size
 

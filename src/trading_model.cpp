@@ -9,17 +9,16 @@
 namespace fxordermgmt
 {
 
-TradingModel::TradingModel(const std::vector<float>& openPrices, const std::vector<float>& highPrices, const std::vector<float>& lowPrices,
-                           const std::vector<float>& closePrices, const std::vector<float>& dateTime)
+TradingModel::TradingModel(std::vector<float> const& openPrices, std::vector<float> const& highPrices, std::vector<float> const& lowPrices,
+                           std::vector<float> const& closePrices, std::vector<float> const& dateTime)
     : openPrices(openPrices), highPrices(highPrices), lowPrices(lowPrices), closePrices(closePrices), dateTime(dateTime)
 {
 }
 
-void TradingModel::receive_latest_market_data(const std::vector<float>& openPrices, const std::vector<float>& highPrices,
-                                              const std::vector<float>& lowPrices, const std::vector<float>& closePrices,
-                                              const std::vector<float>& dateTime)
+void TradingModel::receive_latest_market_data(std::vector<float> const& openPrices, std::vector<float> const& highPrices,
+                                              std::vector<float> const& lowPrices, std::vector<float> const& closePrices,
+                                              std::vector<float> const& dateTime)
 {
-    // Update the market data with each update interval
     this->openPrices = openPrices;
     this->highPrices = highPrices;
     this->lowPrices = lowPrices;

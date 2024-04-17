@@ -16,37 +16,32 @@ class FXMarketTime
   public:
     FXMarketTime() noexcept = default;
 
-    FXMarketTime(int start_hr, int end_hr, int update_frequency_seconds);
+    FXMarketTime(int start_hr, int end_hr, int update_frequency_seconds) noexcept;
 
     [[nodiscard]] bool forex_market_time_setup();
 
     void set_timezone_offset();
 
-    void correct_start_and_end_hours(int offset, int& start_days_adjustment, int& end_days_adjustment);
+    void correct_start_and_end_hours(int offset, int& start_days_adjustment, int& end_days_adjustment) noexcept;
 
     void wait_till_market_is_open(int& start_days_adjustment, int& end_days_adjustment);
 
-    [[nodiscard]] bool is_market_open_today(const std::string& todays_date, int start_days_adjustment, int end_days_adjustment, int day_of_week);
+    [[nodiscard]] bool is_market_open_today(std::string const& todays_date, int start_days_adjustment, int end_days_adjustment, int day_of_week);
 
-    void set_trading_time_bounds(int offset_seconds);
-    
+    void set_trading_time_bounds(int offset_seconds) noexcept;
+
     void set_testing_parameters() noexcept;
 
-    void pause_till_market_open(float seconds_to_wait) const noexcept;
+    void pause_till_market_open(int seconds_to_wait) const noexcept;
 
     [[nodiscard]] bool is_market_closed() const noexcept;
 
     [[nodiscard]] bool is_forex_market_close_only() const noexcept;
 
   private:
-    std::size_t FX_market_start = 0;
-    std::size_t FX_market_end = 0;
-    std::size_t market_close_time = 0;
-    int start_hr = 0;
-    int end_hr = 0;
-    int tz_offset = 0;
-    int tz_offset_seconds = 0;
-    int update_frequency_seconds = 0;
+    std::size_t FX_market_start, FX_market_end, market_close_time;
+    int start_hr, end_hr, update_frequency_seconds;
+    int tz_offset, tz_offset_seconds;
     bool fx_testing = false;
 };
 

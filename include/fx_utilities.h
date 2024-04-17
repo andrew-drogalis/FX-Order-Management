@@ -4,7 +4,7 @@
 #ifndef FX_UTILITIES_H
 #define FX_UTILITIES_H
 
-#include <string>
+#include <string>// for basic_string
 
 namespace fxordermgmt
 {
@@ -15,13 +15,13 @@ class FXUtilities
   public:
     FXUtilities() noexcept = default;
 
-    [[nodiscard]] bool setup_password_first_time(const std::string& account_type, const std::string& username);
+    [[nodiscard]] bool setup_password_first_time(std::string const& account_type, std::string const& username);
 
-    static void init_logging(const std::string& working_directory);
+    static void init_logging(std::string const& working_directory);
 
     [[nodiscard]] std::string get_todays_date() noexcept;
 
-    [[nodiscard]] bool validate_user_interval(std::string update_interval, int update_span, int& update_frequency_seconds);
+    [[nodiscard]] bool validate_user_input(std::string update_interval, int update_span, int& update_frequency_seconds);
 };
 
 }// namespace fxordermgmt

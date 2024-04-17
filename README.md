@@ -63,7 +63,7 @@ The user can replace the order parameters with any valid combination as describe
 ```c
     namespace fxordermgmt {
 
-    extern std::vector<std::string> const fx_symbols_to_trade = {"USD/JPY", "EUR/USD", "USD/CHF", "USD/CAD"};
+    extern std::vector<std::string> fx_symbols_to_trade = {"USD/JPY", "EUR/USD", "USD/CHF", "USD/CAD"};
 
     extern int const order_position_size = 2'000; // Lot Size
 
@@ -85,23 +85,24 @@ The user can replace the order parameters with any valid combination as describe
 User will be prompted the first time they use the application. The password will be stored securely in the keyring and automatically loaded for the next use.
 
 ```c
-   if (account_type == "PAPER") {
-        error = keychain::Error{};
-        password = keychain::getPassword(package_test, service_id_test, paper_account_username, error);
-        
-        if (error.type == keychain::ErrorType::NotFound) {
-            std::cout << "Test Account password not found. Please input password: ";
-            std::cin >> test_account_password;
-            // Test Password Setup
-            keychain::setPassword(package_test, service_id_test, paper_account_username, test_account_password, error);
-            if (error) {
-                std::cerr << "Test Account " << error.message << std::endl;
-                return false;
-            }
-        } else if (error) {
-            std::cerr << error.message << std::endl;
+    error = keychain::Error {};
+    password = keychain::getPassword(package, service_id, username, error);
+    if (error.type == keychain::ErrorType::NotFound)
+    {
+        std::cout << account_type << " Account password not found. Please input password: ";
+        std::cin >> password;
+        error = keychain::Error {};
+        keychain::setPassword(package, service_id, username, password, error);
+        if (error)
+        {
+            BOOST_LOG_TRIVIAL(error) << account_type << " Account: " << error.message;
             return false;
         }
+    }
+    else if (error)
+    {
+        BOOST_LOG_TRIVIAL(error) << error.message;
+        return false;
     }
 ```
 
@@ -116,7 +117,6 @@ void TradingModel::receive_latest_market_data(const std::vector<float>& openPric
                                               const std::vector<float>& lowPrices, const std::vector<float>& closePrices,
                                               const std::vector<float>& dateTime)
 {
-    // Update the market data with each update interval
     this->openPrices = openPrices;
     this->highPrices = highPrices;
     this->lowPrices = lowPrices;
@@ -141,9 +141,6 @@ The default is paper trading, switch to live account and set place trades to tru
 ```c
 int main(int argc, char* argv[])
 {
-    // =============================================================
-    // USER INPUT DEFAULTS
-    // =============================================================
     std::string ACCOUNT = "PAPER"; 
     bool PLACE_TRADES = true; 
     int EMERGENCY_CLOSE = 0;
