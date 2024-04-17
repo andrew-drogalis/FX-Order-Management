@@ -4,7 +4,7 @@
 #ifndef CREDENTIALS_H
 #define CREDENTIALS_H
 
-#include <string>
+#include <string>// for basic_string
 
 namespace fxordermgmt
 {
@@ -15,7 +15,6 @@ extern std::string const paper_account_username = "BLANK";
 
 extern std::string const forex_api_key = "BLANK";
 
-// Store Passwords in Keyring.
 }// namespace fxordermgmt
 
 #endif

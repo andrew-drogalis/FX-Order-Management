@@ -80,24 +80,23 @@ bool FXOrderManagement::initialize_order_management()
     // -------------
     if (! output_order_information()) { return false; }
     if (! read_input_information()) { return false; }
-    // No Errors
+    // No Errors -> return true;
     return true;
 }
 
 bool FXOrderManagement::run_order_management_system()
 {
-    if (emergency_close == 0)
+    if (! emergency_close)
     {
         BOOST_LOG_TRIVIAL(info) << "FX Order Management - Currently Running";
         // Initialize Price History & Trading Model
         return_price_history(fx_symbols_to_trade);
         for (std::string const& symbol : execute_list) { initialize_trading_model(symbol); }
-
-        // Main Order Management
+        // ----------------------------
         while (! fx_market_time.is_market_closed())
         {
             if (! pause_till_next_bar()) { return false; }
-            if (! run_order_processing_per_loop()) { return false; }
+            if (! run_order_processing_loop()) { return false; }
             BOOST_LOG_TRIVIAL(info) << "FX Order Management - Loop Completed";
         }
         BOOST_LOG_TRIVIAL(info) << "FX Order Management - Market Closed";
@@ -110,7 +109,7 @@ bool FXOrderManagement::run_order_management_system()
 // Forex Order Management
 // ==============================================================================================
 
-bool FXOrderManagement::run_order_processing_per_loop()
+bool FXOrderManagement::run_order_processing_loop()
 {
     get_trading_model_signal();
     if (! read_input_information()) { return false; }
@@ -234,7 +233,7 @@ void FXOrderManagement::send_trade_and_update_profit(nlohmann::json& trades_map)
 }
 
 /*  * This Function is Not Called
- * User Has Option to Replace OHLC w/ Tick Data */
+ *  * User Has Option to Replace OHLC w/ Tick Data */
 void FXOrderManagement::return_tick_history(std::vector<std::string> const& symbols_list)
 {
     std::unordered_map<std::string, nlohmann::json> data = session.get_prices(symbols_list, num_data_points);
@@ -242,10 +241,8 @@ void FXOrderManagement::return_tick_history(std::vector<std::string> const& symb
 
 void FXOrderManagement::return_price_history(std::vector<std::string> const& symbols_list)
 {
-    // Get Historical Forex Data
     BOOST_LOG_TRIVIAL(info) << "FX Order Management - Attempting to Fetch Price History";
     int const WAIT_DURATION = 10;
-    std::size_t timestamp_now;
     std::size_t start = (std::chrono::system_clock::now().time_since_epoch()).count() * std::chrono::system_clock::period::num /
                         std::chrono::system_clock::period::den;
     price_data_update_datetime = {};
@@ -277,7 +274,7 @@ void FXOrderManagement::return_price_history(std::vector<std::string> const& sym
         }
         // ------------
         loop_list = price_data_update_failure;
-        timestamp_now = (std::chrono::system_clock::now().time_since_epoch()).count() * std::chrono::system_clock::period::num /
+        std::size_t timestamp_now = (std::chrono::system_clock::now().time_since_epoch()).count() * std::chrono::system_clock::period::num /
                         std::chrono::system_clock::period::den;
         if (loop_list.empty() || (timestamp_now - start) > WAIT_DURATION) { break; }
         else
@@ -409,47 +406,52 @@ void FXOrderManagement::execute_signals(nlohmann::json& trades_map)
     {
         auto error_list = session.trade_order(trades_map, "MARKET");
         ++execution_loop_count;
+        // ------------
+        // Notify if any errors
         if (! error_list.empty())
         {
-            for (auto const& elem : error_list) { BOOST_LOG_TRIVIAL(warning) << "Trading Error for: " << elem << std::endl; }
+            for (auto const& elem : error_list) { BOOST_LOG_TRIVIAL(warning) << "Trading Error for: " << elem; }
         }
-        // ------------------------------------
+        // ------------
         // Check On Active Orders
-        int const loop_iterations = 3;
-        for (int x = 0; x < loop_iterations; x++)
+        int const ITERATIONS = 3;
+        for (int x = 0; x < ITERATIONS; x++)
         {
-            sleep(1);// Pause For Each Loop
+            // Pause For Each Loop
+            sleep(1);
             int pending_order_count = 0;
             nlohmann::json active_orders = session.list_active_orders();
             for (auto& order : active_orders)
             {
                 int const status = order["TradeOrder"]["StatusId"];
+                // ---------------------------
                 if (status == 1)
                 {
                     ++pending_order_count;
-                    if (x == loop_iterations - 1)
+                    if (x == ITERATIONS - 1)
                     {
                         nlohmann::json resp = session.cancel_order(order["TradeOrder"]["OrderId"]);
-                        BOOST_LOG_TRIVIAL(warning) << "Canceled Order: " << resp << std::endl;
+                        BOOST_LOG_TRIVIAL(warning) << "Canceled Order: " << resp;
                     }
                 }
+                // ---------------------------
                 std::vector<int> MAJOR_STATUS_ERROR_CODES = {6, 8, 10};
                 if (std::find(MAJOR_STATUS_ERROR_CODES.begin(), MAJOR_STATUS_ERROR_CODES.end(), status) != MAJOR_STATUS_ERROR_CODES.end())
                 {
                     // Pending Order Count Doesn't Increase Because Order Will Never Finish
-                    BOOST_LOG_TRIVIAL(error) << "Major Order Status Error: " << status << std::endl;
+                    BOOST_LOG_TRIVIAL(error) << "Major Order Status Error: " << status;
                 }
             }
             if (! pending_order_count) { break; }
         }
-        // ---------------------------
+        // ------------
         // Recursive Trade Confirmation Can Only Happen A Maximum of (3) Times
         if (execution_loop_count <= 3) { verify_trades_opened(trades_map); }
         else
         {
             for (std::string const& symbol : error_list)
             {
-                BOOST_LOG_TRIVIAL(warning) << "Trading Error, Symbol Removed: " << symbol << std::endl;
+                BOOST_LOG_TRIVIAL(warning) << "Trading Error, Symbol Removed: " << symbol;
                 position_multiplier[symbol] = 0;
             }
         }
@@ -462,8 +464,8 @@ void FXOrderManagement::verify_trades_opened(nlohmann::json& trades_map)
     std::vector<std::string> keys_list = {};
 
     for (nlohmann::json::iterator it = trades_map.begin(); it != trades_map.end(); ++it) { keys_list.push_back(it.key()); }
-    // ------------------------------------
-    // Check Account Positions
+    // ------------
+    // Check Open Positions
     open_positions = session.list_open_positions();
     for (auto& position : open_positions)
     {
@@ -473,7 +475,6 @@ void FXOrderManagement::verify_trades_opened(nlohmann::json& trades_map)
         // ------------
         if (find(keys_list.begin(), keys_list.end(), symbol) != keys_list.end())
         {
-            // ------------
             keys_list.erase(remove(keys_list.begin(), keys_list.end(), symbol), keys_list.end());
             std::string const direction = trades_map[symbol]["Direction"];
             int const final_quantity = trades_map[symbol]["Final Quantity"];
@@ -491,7 +492,7 @@ void FXOrderManagement::verify_trades_opened(nlohmann::json& trades_map)
         }
     }
     // ---------------------------
-    // Confirm New Positions Are Open
+    // If position not opened, add to new trades map
     for (std::string const& symbol : keys_list)
     {
         if (static_cast<int>(trades_map[symbol]["Final Quantity"]) != 0) { NEW_trades_map[symbol] = trades_map[symbol]; }
@@ -511,16 +512,17 @@ bool FXOrderManagement::gain_capital_session()
 
     if (error.type == keychain::ErrorType::NotFound)
     {
-        std::cerr << "Password not found. Closing Application." << std::endl;
+        BOOST_LOG_TRIVIAL(fatal) << "Password not found. Closing Application.";
         return false;
     }
     else if (error)
     {
-        std::cerr << error.message << std::endl;
+        BOOST_LOG_TRIVIAL(error) << error.message;
         return false;
     }
-    // ---------------------------------------
+    // ---------------------------
     session = gaincapital::GCapiClient(trading_account, password, forex_api_key);
+    // ---------------------------
     if (fx_order_mgmt_testing) { session.set_testing_rest_urls(gain_capital_testing_url); }
     if (! session.authenticate_session()) { return false; }
 

@@ -31,14 +31,8 @@ bool FXUtilities::setup_password_first_time(std::string const& account_type, std
     // -------------------------------
     std::string password, service_id, package;
 
-    if (account_type == "LIVE")
-    {
-        service_id = "Live_Account", package = "com.gain_capital_forex.live_account";
-    }
-    else if (account_type == "PAPER")
-    {
-        service_id = "Test_Account", package = "com.gain_capital_forex.test_account";
-    }
+    if (account_type == "LIVE") { service_id = "Live_Account", package = "com.gain_capital_forex.live_account"; }
+    else { service_id = "Test_Account", package = "com.gain_capital_forex.test_account"; }
     // -------------------------------
     error = keychain::Error {};
     password = keychain::getPassword(package, service_id, username, error);
@@ -67,10 +61,11 @@ void FXUtilities::init_logging(std::string const& working_directory)
 {
     FXUtilities fxUtils;
     std::string const file_name = working_directory + "/" + fxUtils.get_todays_date() + "_FX_Order_Management.log";
-    
+
     static auto file_sink =
         boost::log::add_file_log(boost::log::keywords::file_name = file_name, boost::log::keywords::format = "[%TimeStamp%]: %Message%",
                                  boost::log::keywords::auto_flush = true);
+
     boost::log::add_common_attributes();
 
     boost::log::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::debug);
@@ -90,11 +85,10 @@ bool FXUtilities::validate_user_input(std::string update_interval, int update_sp
 {
     std::vector<int> const SPAN_M = {1, 2, 3, 5, 10, 15, 30};// Span intervals for minutes
     std::vector<int> const SPAN_H = {1, 2, 4, 8};            // Span intervals for hours
-    std::vector<std::string> const INTERVAL = {"HOUR", "MINUTE"};
     // -------------------------------
     transform(update_interval.begin(), update_interval.end(), update_interval.begin(), ::toupper);
 
-    if (std::find(INTERVAL.begin(), INTERVAL.end(), update_interval) == INTERVAL.end())
+    if (update_interval != "MINUTE" && update_interval != "HOUR")
     {
         std::cerr << "Interval Error - Provide one of the following intervals: 'HOUR', 'MINUTE'" << std::endl;
         return false;
@@ -109,7 +103,7 @@ bool FXUtilities::validate_user_input(std::string update_interval, int update_sp
         }
         update_frequency_seconds = 3600 * update_span;
     }
-    else if (update_interval == "MINUTE")
+    else
     {
         if (std::find(SPAN_M.begin(), SPAN_M.end(), update_span) == SPAN_M.end())
         {

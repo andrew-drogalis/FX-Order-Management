@@ -20,7 +20,7 @@ class FXMarketTime
 
     [[nodiscard]] bool forex_market_time_setup();
 
-    void set_timezone_offset();
+    void find_timezone_offset();
 
     void correct_start_and_end_hours(int offset, int& start_days_adjustment, int& end_days_adjustment) noexcept;
 
@@ -32,7 +32,7 @@ class FXMarketTime
 
     void set_testing_parameters() noexcept;
 
-    void pause_till_market_open(int seconds_to_wait) const noexcept;
+    void pause_for_set_time(int seconds_to_wait) const noexcept;
 
     [[nodiscard]] bool is_market_closed() const noexcept;
 
@@ -42,7 +42,7 @@ class FXMarketTime
     std::size_t FX_market_start, FX_market_end, market_close_time;
     int start_hr, end_hr, update_frequency_seconds;
     int tz_offset, tz_offset_seconds;
-    bool fx_testing = false;
+    bool market_time_testing = false;
 };
 
 }// namespace fxordermgmt

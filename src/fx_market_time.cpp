@@ -15,7 +15,7 @@
 #include <unistd.h>     // for sleep
 #include <vector>       // for vector
 
-#include "boost/log/trivial.hpp"              // for BOOST_LOG_TRIVIAL
+#include "boost/log/trivial.hpp"// for BOOST_LOG_TRIVIAL
 
 namespace fxordermgmt
 {
@@ -39,19 +39,21 @@ bool FXMarketTime::forex_market_time_setup()
         BOOST_LOG_TRIVIAL(error) << "Fatal Error: Provide Value Between 0 and 24.";
         return false;
     }
-    if (fx_testing) { return true; }
+    if (market_time_testing) { return true; }
     // --------
-    set_timezone_offset();
+    find_timezone_offset();
+    // --------
     int start_days_adjustment = 0, end_days_adjustment = 0;
     correct_start_and_end_hours(tz_offset, start_days_adjustment, end_days_adjustment);
     // --------
     wait_till_market_is_open(start_days_adjustment, end_days_adjustment);
+    // --------
     set_trading_time_bounds(tz_offset_seconds);
     // No Errors -> return true;
     return true;
 }
 
-void FXMarketTime::set_timezone_offset()
+void FXMarketTime::find_timezone_offset()
 {
     ch::zoned_time const local_time = ch::zoned_time {ch::current_zone(), ch::system_clock::now()};
     ch::zoned_time const london_time = ch::zoned_time {"Europe/London", ch::system_clock::now()};
@@ -102,27 +104,31 @@ void FXMarketTime::wait_till_market_is_open(int& start_days_adjustment, int& end
     {
         // Wait till market starts
         int const seconds_to_wait = (local_hour < start_hr) ? (start_hr - local_hour) * 3600 : (start_hr + 24 - local_hour) * 3600;
-        pause_till_market_open(seconds_to_wait);
+        pause_for_set_time(seconds_to_wait);
     }
     // --------
     bool market_is_open = true;
     do {
         // Pause for 24 Hours
-        if (! market_is_open) { pause_till_market_open(86400); }
+        if (! market_is_open) { pause_for_set_time(86400); }
+        // ----------------------------
         // Keep this information accurate by re-calculating
         int const temp_tz_offset = tz_offset;
-        set_timezone_offset();
+        find_timezone_offset();
         if (temp_tz_offset != tz_offset)
         {
             int difference = tz_offset - temp_tz_offset;
             correct_start_and_end_hours(difference, start_days_adjustment, end_days_adjustment);
         }
+        // ----------------------------
         now = time(0);
         now_local = localtime(&now);
         int const day_of_week = now_local->tm_wday;
         char DATE_TODAY[50];
         strftime(DATE_TODAY, sizeof(DATE_TODAY), "%Y_%m_%d", now_local);
+        // --------
         market_is_open = is_market_open_today(DATE_TODAY, start_days_adjustment, end_days_adjustment, day_of_week);
+
     } while (! market_is_open);
 }
 
@@ -160,13 +166,13 @@ void FXMarketTime::set_trading_time_bounds(int offset_seconds) noexcept
 
 void FXMarketTime::set_testing_parameters() noexcept
 {
-    fx_testing = true;
+    market_time_testing = true;
     std::size_t const time_now = (ch::system_clock::now().time_since_epoch()).count() * ch::system_clock::period::num / ch::system_clock::period::den;
     FX_market_start = time_now;
     FX_market_end = market_close_time = time_now + (2 * update_frequency_seconds) + 10;
 }
 
-void FXMarketTime::pause_till_market_open(int seconds_to_wait) const noexcept
+void FXMarketTime::pause_for_set_time(int seconds_to_wait) const noexcept
 {
     BOOST_LOG_TRIVIAL(info) << "Market Closed; Waiting for Market Open; Will be waiting for " << roundf(seconds_to_wait / 36) / 100 << " Hours...\n";
     if (seconds_to_wait > 0) { sleep(seconds_to_wait); }

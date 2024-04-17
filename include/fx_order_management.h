@@ -14,28 +14,27 @@
 
 #include "fx_market_time.h"// for FXMarketTime
 #include "fx_utilities.h"  // for FXUtilities
+#include "trading_model.h" // for TradingModel
 
 namespace fxordermgmt
 {
 
-class TradingModel;
-
 class FXOrderManagement
 {
   public:
-    FXOrderManagement() noexcept = default;
+    FXOrderManagement() = default;
 
     FXOrderManagement(std::string const& account, bool place_trades, int clear_system, std::string const& sys_path);
 
-    ~FXOrderManagement() noexcept = default;
+    ~FXOrderManagement() = default;
 
     FXOrderManagement(FXOrderManagement const& obj) = delete;
 
     FXOrderManagement& operator=(FXOrderManagement const& obj) = delete;
 
-    FXOrderManagement(FXOrderManagement&& obj) noexcept = default;
+    FXOrderManagement(FXOrderManagement&& obj) = default;
 
-    FXOrderManagement& operator=(FXOrderManagement&& obj) noexcept = default;
+    FXOrderManagement& operator=(FXOrderManagement&& obj) = default;
 
     // ==============================================================================================
     // Main Entry
@@ -99,7 +98,7 @@ class FXOrderManagement
     // Forex Order Management
     // ==============================================================================================
 
-    bool run_order_processing_per_loop();
+    bool run_order_processing_loop();
 
     void build_trades_map();
 
