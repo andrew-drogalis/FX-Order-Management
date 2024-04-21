@@ -16,9 +16,10 @@ add_executable(
   ${PROJECT_NAME}
   main.cpp
   src/fx_order_management.cpp
-  src/trading_model.cpp
+  src/fx_trading_model.cpp
   src/fx_market_time.cpp
-  src/fx_utilities.cpp)
+  src/fx_utilities.cpp
+  src/fx_exception.cpp)
 
 set_target_properties(${PROJECT_NAME} PROPERTIES VERSION ${PROJECT_VERSION})
 
@@ -88,7 +89,7 @@ include_directories(${Boost_INCLUDE_DIRS} ${CMAKE_CURRENT_SOURCE_DIR}/lib)
 add_library(gain_capital_api SHARED IMPORTED)
 
 set_target_properties(gain_capital_api PROPERTIES IMPORTED_LOCATION
-                                                  ${CMAKE_CURRENT_SOURCE_DIR}/lib/libgain_capital_api.so.1.0.2)
+                                                  ${CMAKE_CURRENT_SOURCE_DIR}/lib/libgain_capital_api.so.2.0.2)
 
 target_link_libraries(
   ${PROJECT_NAME}

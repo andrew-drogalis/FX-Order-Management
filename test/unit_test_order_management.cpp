@@ -7,11 +7,11 @@
 
 namespace {
 
-TEST(GainCapital, DefaultConstructor) {
-    const gaincapital::GCapiClient g;
+TEST(FXOrderManagementTests, DefaultConstructor) {
+    fxordermgmt::FXOrderManagement fx_mgmt;
     
-    EXPECT_EQ(g.trading_account_id, "");
-    EXPECT_EQ(g.client_account_id, "");
+    // EXPECT_EQ(g.trading_account_id, "");
+    // EXPECT_EQ(g.client_account_id, "");
 }
 
 

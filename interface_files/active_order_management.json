@@ -1,0 +1,10 @@
+{
+    "EUR/USD": {
+        "Close_Position": false,
+        "Position_Size_Multiple": 1.0
+    },
+    "USD/CAD": {
+        "Close_Position": false,
+        "Position_Size_Multiple": 1.0
+    }
+}

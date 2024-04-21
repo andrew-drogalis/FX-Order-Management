@@ -1,8 +1,8 @@
 // Copyright 2024, Andrew Drogalis
 // GNU License
 
+#include "fx_main_utilities.hpp"// for validateMainParameters, validateAccountType...
 #include "fx_order_management.h"// for FXOrderManagement
-#include "main_utilities.hpp"   // for validateMainParameters, validateAccountType...
 
 #include <filesystem>// for current_path, path
 #include <iostream>  // for operator<<, basic_ostream, cout
@@ -16,23 +16,32 @@ int main(int argc, char* argv[])
     // =============================================================
     std::string ACCOUNT = "PAPER";
     bool PLACE_TRADES = true;
-    int EMERGENCY_CLOSE = 0;
-
-    // -------------------------------
-    if (! fxordermgmt::validateMainParameters(argc, argv, ACCOUNT, PLACE_TRADES)) { return 1; }
+    int MAX_RETRY_FAILURES = 3;
+    // ------------------
+    if (! fxordermgmt::validateMainParameters(argc, argv, ACCOUNT, PLACE_TRADES, MAX_RETRY_FAILURES)) { return 1; }
     if (! fxordermgmt::validateAccountType(ACCOUNT)) { return 1; }
+    int EMERGENCY_CLOSE;
     fxordermgmt::userInputEmergencyClose(EMERGENCY_CLOSE);
 
-    std::string working_directory = std::filesystem::current_path();
     // Initialize Order Management
-    fxordermgmt::FXOrderManagement fx = fxordermgmt::FXOrderManagement(ACCOUNT, PLACE_TRADES, EMERGENCY_CLOSE, working_directory);
+    fxordermgmt::FXOrderManagement fx {ACCOUNT, PLACE_TRADES, MAX_RETRY_FAILURES, EMERGENCY_CLOSE, std::filesystem::current_path()};
 
-    if (! fx.initialize_order_management()) { return 1; }
-    if (! fx.run_order_management_system()) { return 1; }
+    auto initialization_response = fx.initialize_order_management();
+    if (! initialization_response)
+    {
+        std::cout << initialization_response.error().what() << '\n';
+        return 1;
+    }
 
-    // -------------------------------
+    auto run_order_mgmt_response = fx.run_order_management_system();
+    if (! run_order_mgmt_response)
+    {
+        std::cout << run_order_mgmt_response.error().what() << '\n';
+        return 1;
+    }
+    // -------------------
     time_t end_time = time(NULL);
     std::cout << "FX Order Management - Program Terminated Successfully: " << ctime(&end_time) << '\n';
-
+    // -------------------
     return 0;
 }

@@ -24,7 +24,7 @@ This repository is dependent upon the API from Gain Capital's Forex.com. To make
 
 ### Downloading Dependencies
 
-Please see a link to required dependencies [below](#Dependencies). If you are in Linux, Boost & OpenSSL & libsecret can be installed with the following commands below.
+Please see a link to required dependencies [below](#Dependencies). If you are in Linux, Boost & OpenSSL & libsecret can be installed with the following commands below. Additionally, this repository comes with a .devcontainer directory. The .devcontainer has all the required dependencies and can be run inside a Docker container.
 
 ```
     Fedora:
@@ -43,103 +43,55 @@ Please see a link to required dependencies [below](#Dependencies). If you are in
 
 The user should replace the usernames and API key, but the password should not be stored in plain text. The program will prompt the user to assign a new password if one doesn't already exist in the keyring.
 
-```c
-    namespace fxordermgmt {
+```json
+{
+    "Username": "Blank",
+    "Paper_Username": "Blank",
+    "API_Key": "Blank",
+    "Positions": [
+        "USD/JPY",
+        "EUR/USD",
+        "USD/CHF",
+        "USD/CAD"
+    ],
+    "Order_Size": 1000,
+    "Update_Interval": "Minute",
+    "Update_Span": 5,
+    "Num_Data_Points": 10000,
+    "Start_Hour_London_Exchange": 8,
+    "End_Hour_London_Exchange": 20
+}
+```
 
-    extern std::string const account_username = "BLANK";
-
-    extern std::string const paper_account_username = "BLANK";
-
-    extern std::string const forex_api_key = "BLANK";
-
-    }// namespace fxordermgmt
+```txt
+Options:
+    Order_Size: Intervals of 1,000;
+    Update_Interval: Minute or Hour;
+    Update_Span: MINUTES: 1, 2, 3, 5, 10, 15, 30; HOURS: 1, 2, 4, 8;
+    Start_Hour_London_Exchange: 0 - 24; All local times are adjusted to coordinate with the London Forex Exchange;
+    End_Hour_London_Exchange: 0 - 24; All local times are adjusted to coordinate with the London Forex Exchange;
 ```
 
 ### Updating Order Parameters
 
 The user can replace the order parameters with any valid combination as described in the Gain Capital API documents. In the case of a typo, the code provides appropriate checks to confirm the user is compliant with the documentation.
 
-```c
-    namespace fxordermgmt
-    {
-
-    extern std::vector<std::string> fx_symbols_to_trade = {"USD/JPY", "EUR/USD", "USD/CHF", "USD/CAD"};
-
-    // Lot Size
-    extern int const order_position_size = 2'000;
-
-    // Historical Data Length
-    extern int const num_data_points = 1'000;
-
-    // MINUTE or HOUR
-    extern std::string update_interval = "MINUTE";
-
-    // Span of Interval e.g. 5 Minutes 
-    // MINUTES: 1, 2, 3, 5, 10, 15, 30; HOURS: 1, 2, 4, 8;
-    extern int const update_span = 5;
-
-    // User defined Start Time in London Time (Forex Trading on London exchange)
-    extern int const start_hr = 8;
-
-    // User defined End Time in London Time (Forex Trading on London exchange)
-    extern int const end_hr = 20;
-
-    }// namespace fxordermgmt
-
-```
 
 ### Setting Password in Keyring
 
 User will be prompted the first time they use the application. The password will be stored securely in the keyring and automatically loaded for the next use.
-
-```c
-    error = keychain::Error {};
-    password = keychain::getPassword(package, service_id, username, error);
-    if (error.type == keychain::ErrorType::NotFound)
-    {
-        std::cout << account_type << " Account password not found. Please input password: ";
-        std::cin >> password;
-        error = keychain::Error {};
-        keychain::setPassword(package, service_id, username, password, error);
-        if (error)
-        {
-            BOOST_LOG_TRIVIAL(error) << account_type << " Account: " << error.message;
-            return false;
-        }
-    }
-    else if (error)
-    {
-        BOOST_LOG_TRIVIAL(error) << error.message;
-        return false;
-    }
-```
 
 ### Updating Trading Model
 
 Please don't run in a live trading environment with the placeholder trading model provided. The user should modify with their own trading strategy.
 
 ```c
-namespace fxordermgmt {
-
-void TradingModel::receive_latest_market_data(const std::vector<float>& openPrices, const std::vector<float>& highPrices,
-                                              const std::vector<float>& lowPrices, const std::vector<float>& closePrices,
-                                              const std::vector<float>& dateTime)
-{
-    this->openPrices = openPrices;
-    this->highPrices = highPrices;
-    this->lowPrices = lowPrices;
-    this->closePrices = closePrices;
-    this->dateTime = dateTime;
-}
-
-int TradingModel::send_trading_signal() 
+int FXTradingModel::send_trading_signal()
 {
     // User's code to Buy / Sell
-    double const signal = static_cast<double>(rand()) / RAND_MAX;
-    return (signal > 0.5) ? 1 : -1;
+    int const signal = rand() % 2;
+    return (signal) ? 1 : -1;
 }
-
-} // namespace fxordermgmt
 ```
 
 ### Switch to Live Trading
@@ -151,7 +103,8 @@ int main(int argc, char* argv[])
 {
     std::string ACCOUNT = "PAPER"; 
     bool PLACE_TRADES = true; 
-    int EMERGENCY_CLOSE = 0;
+    int MAX_RETRY_FAILURES = 3;
+    ...
 ```
 
 ### Profitability Reports
@@ -159,15 +112,18 @@ int main(int argc, char* argv[])
 ```json
 {
     "Last Updated": "Thu Feb  1 14:04:06 2024",
-    "Performance Information": {
+    "Performance Information": 
+    {
         "Current Funds": 45884.16,
         "Inital Funds": 45887.76,
         "Margin Utilized": 121.73,
         "Profit Cumulative": -3.59,
         "Profit Percent Cumulative": -0.0
     },
-    "Position Information": {
-        "EUR/USD": {
+    "Position Information": 
+    {
+        "EUR/USD": 
+        {
             "Current Price": 1.087210,
             "Direction": "buy",
             "Entry Price": 1.08727,
@@ -175,7 +131,8 @@ int main(int argc, char* argv[])
             "Profit Percent": -0.009999,
             "Quantity": 1000.0
         },
-        "USD/CAD": {
+        "USD/CAD": 
+        {
             "Current Price": 1.337329,
             "Direction": "buy",
             "Entry Price": 1.33754,
@@ -193,15 +150,23 @@ Changing the value to true will either close the trade immediately upon the upda
 
 ```json
 {
-    "EUR/USD": {
-        "Close Immediately": false,
-        "Close On Trade Signal Change": false
+    "EUR/USD": 
+    {
+        "Close_Position": false,
+        "Position_Size_Multiple": 1.0
     },
-    "USD/CAD": {
-        "Close Immediately": false,
-        "Close On Trade Signal Change": false
+    "USD/CAD": 
+    {
+        "Close_Position": false,
+        "Position_Size_Multiple": 1.0
     }
 }
+```
+
+```txt
+Options:
+    Close_Position: true or false; Closes position at next update interval;
+    Position_Size_Multiple: Any Double Number; Changes the quantity relative to the Order_Size;
 ```
 
 # Building Executable

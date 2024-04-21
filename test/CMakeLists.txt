@@ -61,11 +61,13 @@ include(${PARENT_DIR}/cmake/Keychain.cmake)
 add_executable(
   unit_test
   unit_test_utilities.cpp
+  unit_test_market_time.cpp
   unit_test_order_management.cpp
   ${PARENT_DIR}/src/fx_market_time.cpp
   ${PARENT_DIR}/src/fx_order_management.cpp
-  ${PARENT_DIR}/src/trading_model.cpp
-  ${PARENT_DIR}/src/fx_utilities.cpp)
+  ${PARENT_DIR}/src/fx_trading_model.cpp
+  ${PARENT_DIR}/src/fx_utilities.cpp
+  ${PARENT_DIR}/src/fx_exception.cpp)
 
 build_keychain(unit_test ${PARENT_DIR})
 
@@ -90,8 +92,9 @@ add_executable(
   functional_test_production_env.cpp
   ${PARENT_DIR}/src/fx_market_time.cpp
   ${PARENT_DIR}/src/fx_order_management.cpp
-  ${PARENT_DIR}/src/trading_model.cpp
-  ${PARENT_DIR}/src/fx_utilities.cpp)
+  ${PARENT_DIR}/src/fx_trading_model.cpp
+  ${PARENT_DIR}/src/fx_utilities.cpp
+  ${PARENT_DIR}/src/fx_exception.cpp)
 
 build_keychain(functional_tests_production_scenario ${PARENT_DIR})
 
@@ -119,8 +122,9 @@ add_executable(
   unit_test_order_management.cpp
   ${PARENT_DIR}/src/fx_market_time.cpp
   ${PARENT_DIR}/src/fx_order_management.cpp
-  ${PARENT_DIR}/src/trading_model.cpp
-  ${PARENT_DIR}/src/fx_utilities.cpp)
+  ${PARENT_DIR}/src/fx_trading_model.cpp
+  ${PARENT_DIR}/src/fx_utilities.cpp
+  ${PARENT_DIR}/src/fx_exception.cpp)
 
 build_keychain(functional_tests_failure_scenario ${PARENT_DIR})
 

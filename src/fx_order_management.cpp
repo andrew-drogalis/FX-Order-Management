@@ -4,9 +4,10 @@
 #include "fx_order_management.h"
 
 #include <algorithm>       // for remove, find
-#include <bits/chrono.h>   // for system_clock
+#include <chrono>          // for system_clock
 #include <cmath>           // for round
 #include <ctime>           // for size_t, ctime
+#include <expected>        // for expected
 #include <fstream>         // for basic_ostream
 #include <initializer_list>// for initializer_list
 #include <iostream>        // for cerr, cout
@@ -16,75 +17,69 @@
 #include <utility>         // for pair
 #include <vector>          // for vector
 
-#include "boost/log/trivial.hpp"              // for BOOST_LOG_TRIVIAL
-#include "gain_capital_api/gain_capital_api.h"// for GCapiClient
-#include "keychain/keychain.h"                // for Error, getPass...
-#include "json/json.hpp"                      // for json_ref, basi...
+#include "boost/log/trivial.hpp"                 // for BOOST_LOG_TRIVIAL
+#include "gain_capital_api/gain_capital_client.h"// for GCapiClient
+#include "json/json.hpp"                         // for json_ref, basi...
 
-#include "credentials.h"     // for account_username
+#include "fx_exception.h"    // for FXException
 #include "fx_market_time.h"  // for FXMarketTime
+#include "fx_trading_model.h"// for FXTradingModel
 #include "fx_utilities.h"    // for FXUtilities
-#include "order_parameters.h"// for fx_symbols_to_...
-#include "trading_model.h"   // for TradingModel
 
 namespace fxordermgmt
 {
 
-FXOrderManagement::FXOrderManagement(std::string const& paper_or_live, bool place_trades, int emergency_close, std::string const& working_directory)
-    : paper_or_live(paper_or_live), place_trades(place_trades), emergency_close(emergency_close), sys_path(working_directory)
+FXOrderManagement::FXOrderManagement(std::string const& paper_or_live, bool place_trades, int max_retry_failures, int emergency_close,
+                                     std::string working_directory)
+    : paper_or_live(paper_or_live), place_trades(place_trades), max_retry_failures(max_retry_failures), emergency_close(emergency_close),
+      sys_path(working_directory)
 {
-    if (paper_or_live == "PAPER")
-    {
-        // Extern Declaration
-        trading_account = paper_account_username;
-        service_id = "Test_Account";
-        package = "com.gain_capital_forex.test_account";
-    }
-    else
-    {
-        // Extern Declaration
-        trading_account = account_username;
-        service_id = "Live_Account";
-        package = "com.gain_capital_forex.live_account";
-    }
 }
 
 // ==============================================================================================
 // Main Entry
 // ==============================================================================================
 
-bool FXOrderManagement::initialize_order_management()
+std::expected<bool, FXException> FXOrderManagement::initialize_order_management()
 {
-    fx_utilities.init_logging(sys_path);
-    // -------------
-    if (! fx_utilities.validate_user_input(update_interval, update_span, update_frequency_seconds)) { return false; }
-    // -------------
-    if (! fx_utilities.setup_password_first_time(paper_or_live, trading_account)) { return false; }
-    // -------------
+    auto logging_response = fx_utilities.initialize_logging(sys_path);
+    if (! logging_response) { return logging_response; }
+    // -------------------
+    auto user_settings_response = load_user_settings();
+    if (! user_settings_response) { return user_settings_response; }
+    // -------------------
+    auto validation_response = fx_utilities.validate_user_settings(update_interval, update_span, update_frequency_seconds);
+    if (! validation_response) { return validation_response; }
+    // -------------------
+    auto password_response = fx_utilities.keyring_unlock_get_password(paper_or_live, trading_account);
+    if (! password_response) { return std::expected<bool, FXException> {std::unexpect, std::move(password_response.error())}; }
+    std::string password = password_response.value();
+    // -------------------
     fx_market_time = FXMarketTime(start_hr, end_hr, update_frequency_seconds);
-    if (! fx_market_time.forex_market_time_setup()) { return false; }
+    if (! fx_market_time.initialize_forex_market_time()) { return false; }
     // -------------
     for (std::string const& symbol : fx_symbols_to_trade)
     {
         position_multiplier[symbol] = 1;
-        open_prices_map[symbol].reserve(num_data_points);
-        high_prices_map[symbol].reserve(num_data_points);
-        low_prices_map[symbol].reserve(num_data_points);
-        close_prices_map[symbol].reserve(num_data_points);
-        datetime_map[symbol].reserve(num_data_points);
+        open_prices_map[symbol].resize(num_data_points);
+        high_prices_map[symbol].resize(num_data_points);
+        low_prices_map[symbol].resize(num_data_points);
+        close_prices_map[symbol].resize(num_data_points);
+        datetime_map[symbol].resize(num_data_points);
+        initialize_trading_model(symbol);
     }
     // -------------
-    if (! gain_capital_session()) { return false; }
+    if (! gain_capital_session(password)) { return false; }
     // -------------
     if (emergency_close) { emergency_position_close(); }
     // -------------
-    if (! output_order_information()) { return false; }
-    if (! read_input_information()) { return false; }
+    if (! output_profit_report()) { return false; }
+    if (! read_active_management_file()) { return false; }
     // No Errors -> return true;
-    return true;
+    return std::expected<bool, FXException> {true};
 }
 
-bool FXOrderManagement::run_order_management_system()
+std::expected<bool, FXException> FXOrderManagement::run_order_management_system()
 {
     if (! emergency_close)
     {
@@ -96,7 +91,9 @@ bool FXOrderManagement::run_order_management_system()
         while (! fx_market_time.is_market_closed())
         {
             if (! pause_till_next_bar()) { return false; }
-            if (! run_order_processing_loop()) { return false; }
+            if (! read_active_management_file()) { return false; }
+            build_trades_map();
+            output_profit_report();
             BOOST_LOG_TRIVIAL(info) << "FX Order Management - Loop Completed";
         }
         BOOST_LOG_TRIVIAL(info) << "FX Order Management - Market Closed";
@@ -109,18 +106,13 @@ bool FXOrderManagement::run_order_management_system()
 // Forex Order Management
 // ==============================================================================================
 
-bool FXOrderManagement::run_order_processing_loop()
-{
-    get_trading_model_signal();
-    if (! read_input_information()) { return false; }
-    build_trades_map();
-    return true;
-}
-
-void FXOrderManagement::build_trades_map()
+std::expected<bool, FXException> FXOrderManagement::build_trades_map()
 {
     nlohmann::json trades_map = {};
-    open_positions = session.list_open_positions();
+    auto open_positions_response = session.list_open_positions();
+    if (! open_positions_response) { std::expected<bool, FXException> {std::unexpect, open_positions_response.error().where(), open_positions_response.error().what()}; }
+
+    nlohmann::json open_positions = open_positions_response.value()["OpenPositions"];
     // ---------------------------
     if (! fx_market_time.is_forex_market_close_only())
     {
@@ -197,13 +189,21 @@ void FXOrderManagement::build_trades_map()
             trades_map[symbol] = {{"Quantity", static_cast<int>(position["Quantity"])}, {"Direction", new_direction}, {"Final Quantity", 0}};
         }
     }
-    send_trade_and_update_profit(trades_map);
+    // Place Trades
+    if (! trades_map.empty())
+    {
+        execution_loop_count = 0;
+        execute_signals(trades_map);
+    }
 }
 
-void FXOrderManagement::emergency_position_close()
+std::expected<bool, FXException> FXOrderManagement::emergency_position_close()
 {
     nlohmann::json trades_map = {};
-    open_positions = session.list_open_positions();
+    auto open_positions_response = session.list_open_positions();
+    if (! open_positions_response) { std::expected<bool, FXException> {std::unexpect, open_positions_response.error().where(), open_positions_response.error().what()}; }
+    
+    nlohmann::json open_positions = open_positions_response.value()["OpenPositions"];
     // ---------------------------
     for (auto position : open_positions)
     {
@@ -213,33 +213,30 @@ void FXOrderManagement::emergency_position_close()
         std::string const new_direction = (direction == "buy") ? "sell" : "buy";
         trades_map[symbol] = {{"Quantity", quantity}, {"Direction", new_direction}, {"Final Quantity", 0}};
     }
-    send_trade_and_update_profit(trades_map);
-}
-
-void FXOrderManagement::send_trade_and_update_profit(nlohmann::json& trades_map)
-{
     // Place Trades
     if (! trades_map.empty())
     {
         execution_loop_count = 0;
         execute_signals(trades_map);
     }
-    // ------------
-    // Update Profit Report
-    nlohmann::json margin_info = session.get_margin_info();
-    equity_total = (! margin_info.empty()) ? static_cast<float>(margin_info["netEquity"]) : 0.0;
-    margin_total = (! margin_info.empty()) ? static_cast<float>(margin_info["margin"]) : 0.0;
-    if (! output_order_information()) {}
 }
 
 /*  * This Function is Not Called
  *  * User Has Option to Replace OHLC w/ Tick Data */
-void FXOrderManagement::return_tick_history(std::vector<std::string> const& symbols_list)
+std::expected<bool, FXException> FXOrderManagement::return_tick_history(std::vector<std::string> const& symbols_list)
 {
-    std::unordered_map<std::string, nlohmann::json> data = session.get_prices(symbols_list, num_data_points);
+    for (auto const& symbol: symbols_list)
+    {
+    auto prices_response = session.get_prices(symbol, num_data_points);
+    if (! prices_response) { return std::expected<bool, FXException> {std::unexpect, prices_response.error().where(), prices_response.error().what()}; }
+    nlohmann::json prices = prices_response.value();
+    /*
+        Do something with values
+    */
+}
 }
 
-void FXOrderManagement::return_price_history(std::vector<std::string> const& symbols_list)
+std::expected<bool, FXException> FXOrderManagement::return_price_history(std::vector<std::string> const& symbols_list)
 {
     BOOST_LOG_TRIVIAL(info) << "FX Order Management - Attempting to Fetch Price History";
     int const WAIT_DURATION = 10;
@@ -275,7 +272,7 @@ void FXOrderManagement::return_price_history(std::vector<std::string> const& sym
         // ------------
         loop_list = price_data_update_failure;
         std::size_t timestamp_now = (std::chrono::system_clock::now().time_since_epoch()).count() * std::chrono::system_clock::period::num /
-                        std::chrono::system_clock::period::den;
+                                    std::chrono::system_clock::period::den;
         if (loop_list.empty() || (timestamp_now - start) > WAIT_DURATION) { break; }
         else
         {
@@ -335,7 +332,7 @@ void FXOrderManagement::return_price_history(std::vector<std::string> const& sym
     }
 }
 
-bool FXOrderManagement::pause_till_next_bar()
+std::expected<bool, FXException> FXOrderManagement::pause_till_next_bar()
 {
     next_bar_timestamp = last_bar_timestamp + update_frequency_seconds;
     std::size_t const time_next_bar_will_be_ready = next_bar_timestamp + update_frequency_seconds;
@@ -352,9 +349,9 @@ bool FXOrderManagement::pause_till_next_bar()
                 return_price_history(price_data_update_failure);
                 if (! execute_list.empty())
                 {
-                    get_trading_model_signal();
-                    if (! read_input_information()) { return false; }
+                    if (! read_active_management_file()) { return false; }
                     build_trades_map();
+                    output_profit_report();
                 }
             }
             else { break; }
@@ -400,7 +397,7 @@ bool FXOrderManagement::pause_till_next_bar()
     return true;
 }
 
-void FXOrderManagement::execute_signals(nlohmann::json& trades_map)
+std::expected<bool, FXException> FXOrderManagement::execute_signals(nlohmann::json& trades_map)
 {
     if (place_trades || emergency_close)
     {
@@ -458,7 +455,7 @@ void FXOrderManagement::execute_signals(nlohmann::json& trades_map)
     }
 }
 
-void FXOrderManagement::verify_trades_opened(nlohmann::json& trades_map)
+std::expected<bool, FXException> FXOrderManagement::verify_trades_opened(nlohmann::json& trades_map)
 {
     nlohmann::json NEW_trades_map = {};
     std::vector<std::string> keys_list = {};
@@ -466,7 +463,10 @@ void FXOrderManagement::verify_trades_opened(nlohmann::json& trades_map)
     for (nlohmann::json::iterator it = trades_map.begin(); it != trades_map.end(); ++it) { keys_list.push_back(it.key()); }
     // ------------
     // Check Open Positions
-    open_positions = session.list_open_positions();
+    auto open_positions_response = session.list_open_positions();
+    if (! open_positions_response) { std::expected<bool, FXException> {std::unexpect, open_positions_response.error().where(), open_positions_response.error().what()}; }
+
+    nlohmann::json open_positions = open_positions_response.value()["OpenPositions"];
     for (auto& position : open_positions)
     {
         std::string const symbol = position["MarketName"];
@@ -505,61 +505,67 @@ void FXOrderManagement::verify_trades_opened(nlohmann::json& trades_map)
 // ==============================================================================================
 // Gain Capital API
 // ==============================================================================================
-bool FXOrderManagement::gain_capital_session()
+std::expected<bool, FXException> FXOrderManagement::gain_capital_session(std::string const& password)
 {
-    keychain::Error error {};
-    std::string password = keychain::getPassword(package, service_id, trading_account, error);
-
-    if (error.type == keychain::ErrorType::NotFound)
-    {
-        BOOST_LOG_TRIVIAL(fatal) << "Password not found. Closing Application.";
-        return false;
-    }
-    else if (error)
-    {
-        BOOST_LOG_TRIVIAL(error) << error.message;
-        return false;
-    }
-    // ---------------------------
-    session = gaincapital::GCapiClient(trading_account, password, forex_api_key);
+    session = gaincapital::GCClient(trading_account, password, forex_api_key);
     // ---------------------------
     if (fx_order_mgmt_testing) { session.set_testing_rest_urls(gain_capital_testing_url); }
-    if (! session.authenticate_session()) { return false; }
+    auto authenticate_session_response = session.authenticate_session();
+    if (! authenticate_session_response)
+    {
+        return std::expected<bool, FXException> {std::unexpect, authenticate_session_response.error().where(),
+                                                 authenticate_session_response.error().what()};
+    }
 
     BOOST_LOG_TRIVIAL(info) << "FX Order Management - New Gain Capital Session Initiated";
 
-    if (! fx_symbols_to_trade.empty() && session.get_market_ids(fx_symbols_to_trade) == std::unordered_map<std::string, int>()) { return false; }
+    for (auto const& symbol : fx_symbols_to_trade)
+    {
+        auto market_id_response = session.get_market_id(symbol);
+        if (! market_id_response)
+        {
+            return std::expected<bool, FXException> {std::unexpect, market_id_response.error().where(), market_id_response.error().what()};
+        }
+    }
 
-    return true;
+    return std::expected<bool, FXException> {true};
 }
 
 // ==============================================================================================
-// Trading Model
+// FX Trading Model
 // ==============================================================================================
-void FXOrderManagement::initialize_trading_model(std::string const& symbol)
+void FXOrderManagement::initialize_trading_model(std::string const& symbol) noexcept
 {
-    trading_model_map.emplace(symbol, TradingModel {open_prices_map[symbol], high_prices_map[symbol], low_prices_map[symbol],
-                                                    close_prices_map[symbol], datetime_map[symbol]});
+    trading_model_map.emplace(symbol, FXTradingModel {open_prices_map[symbol], high_prices_map[symbol], low_prices_map[symbol],
+                                                      close_prices_map[symbol], datetime_map[symbol]});
 
     BOOST_LOG_TRIVIAL(info) << "FX Order Management - Trading Model Initialized for " << symbol;
 }
 
-void FXOrderManagement::get_trading_model_signal()
+// ==============================================================================================
+// Forex File I/O
+// ==============================================================================================
+
+std::expected<bool, FXException> FXOrderManagement::load_user_settings() 
 {
-    for (std::string symbol : execute_list)
+    std::string const file_name = sys_path + "/interface_files/user_settings.json";
+    nlohmann::json data;
+
+    std::ifstream in(file_name);
+    if (in.is_open())
     {
-        if (! trading_model_map.count(symbol)) { initialize_trading_model(symbol); }
-        trading_model_map[symbol].receive_latest_market_data(open_prices_map[symbol], high_prices_map[symbol], low_prices_map[symbol],
-                                                             close_prices_map[symbol], datetime_map[symbol]);
+        data = nlohmann::json::parse(in);
+        in.close();
+    }
+    else
+    {
+
     }
 }
 
-// ==============================================================================================
-// Forex Order File I/O
-// ==============================================================================================
-bool FXOrderManagement::read_input_information()
+std::expected<bool, FXException> FXOrderManagement::read_active_management_file()
 {
-    std::string const file_name = sys_path + "/" + fx_utilities.get_todays_date() + "_FX_Order_Deletion.json";
+    std::string const file_name = sys_path + "/interface_files/active_order_management.json";
     std::vector<std::string> double_check = fx_symbols_to_trade;
     nlohmann::json data;
 
@@ -598,12 +604,18 @@ bool FXOrderManagement::read_input_information()
     return success;
 }
 
-bool FXOrderManagement::output_order_information()
+std::expected<bool, FXException> FXOrderManagement::output_profit_report()
 {
     nlohmann::json current_performance = {}, current_positions = {};
-    float profit = 0, profit_percent = 0;
-    time_t time_now = time(NULL);
 
+    auto margin_info_reponse = session.get_margin_info();
+    float equity_total = (! margin_info.empty()) ? static_cast<float>(margin_info["netEquity"]) : 0.0;
+    float margin_total = (! margin_info.empty()) ? static_cast<float>(margin_info["margin"]) : 0.0;
+
+    auto open_positions_response = session.list_open_positions();
+    if (! open_positions_response) { std::expected<bool, FXException> {std::unexpect, open_positions_response.error().where(), open_positions_response.error().what()}; }
+
+    nlohmann::json open_positions = open_positions_response.value()["OpenPositions"];
     for (auto& position : open_positions)
     {
         std::string const market_name = position["MarketName"];
@@ -611,11 +623,11 @@ bool FXOrderManagement::output_order_information()
         float const entry_price = position["Price"];
         int const quantity = position["Quantity"];
 
-        std::unordered_map<std::string, nlohmann::json> response = session.get_prices({market_name});
+        auto prices_response = session.get_prices({market_name});
         float const current_price = (! response.empty()) ? static_cast<float>(response[market_name][0]["Price"]) : 0.0;
 
-        profit = round((current_price - entry_price) * 100'000) / 100'000 * direction;
-        profit_percent = (entry_price != 0) ? round(profit * 10'000 / entry_price) / 100 : 0;
+        float profit = round((current_price - entry_price) * 100'000) / 100'000 * direction;
+        float profit_percent = (entry_price != 0) ? round(profit * 10'000 / entry_price) / 100 : 0;
 
         current_positions[market_name] = {{"Direction", position["Direction"]},
                                           {"Quantity", position["Quantity"]},
@@ -625,16 +637,17 @@ bool FXOrderManagement::output_order_information()
                                           {"Profit Percent", profit_percent}};
     }
     // ---------------------------
-    if (init_equity == 0) { init_equity = equity_total; }
-    float const total_profit = round((equity_total - init_equity) * 100) / 100;
-    float const total_profit_percent = (init_equity != 0) ? round(profit * 10'000 / init_equity) / 100 : 0;
+    if (initial_equity == 0) { initial_equity = equity_total; }
+    float const total_profit = round((equity_total - initial_equity) * 100) / 100;
+    float const total_profit_percent = (initial_equity != 0) ? round(total_profit * 10'000 / initial_equity) / 100 : 0;
 
-    current_performance["Performance Information"] = {{"Initial Funds", init_equity},
+    current_performance["Performance Information"] = {{"Initial Funds", initial_equity},
                                                       {"Current Funds", equity_total},
                                                       {"Margin Utilized", margin_total},
                                                       {"Profit Cumulative", total_profit},
                                                       {"Profit Percent Cumulative", total_profit_percent}};
     current_performance["Position Information"] = current_positions;
+    time_t time_now = time(NULL);
     current_performance["Last Updated"] = ctime(&time_now);
 
     std::string const file_name = sys_path + "/" + fx_utilities.get_todays_date() + "_FX_Order_Information.json";
@@ -654,7 +667,7 @@ bool FXOrderManagement::output_order_information()
 // Testing
 // ==============================================================================================
 
-void FXOrderManagement::enable_testing(std::string const& url, std::string const& function_to_test)
+std::expected<std::string, FXException> FXOrderManagement::enable_testing(std::string const& url)
 {
     fx_order_mgmt_testing = true;
     gain_capital_testing_url = url;
