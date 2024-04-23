@@ -18,6 +18,7 @@
 #include "boost/log/utility/setup/common_attributes.hpp"// for add_common...
 #include "boost/log/utility/setup/file.hpp"             // for add_file_log
 #include "keychain/keychain.h"                          // for Error, set...
+#include <boost/log/utility/setup/console.hpp>          // for add_consule_log
 
 #include "fx_exception.h"// for FXException
 
@@ -98,7 +99,7 @@ std::expected<bool, FXException> FXUtilities::validate_user_settings(std::string
     return std::expected<bool, FXException> {true};
 }
 
-std::expected<bool, FXException> FXUtilities::initialize_logging(std::string const& working_directory)
+std::expected<bool, FXException> FXUtilities::initialize_logging_file(std::string const& working_directory)
 {
     FXUtilities fxUtils;
     std::string const dir = working_directory + "/interface_files/logs";
@@ -125,6 +126,8 @@ std::expected<bool, FXException> FXUtilities::initialize_logging(std::string con
     // -------------------
     return std::expected<bool, FXException> {true};
 }
+
+void log_to_std_ouput() { static auto console_sink = boost::log::add_console_log(std::cout, boost::log::keywords::format = ">> %Message%"); }
 
 std::string FXUtilities::get_todays_date() noexcept
 {

@@ -55,7 +55,7 @@ RUN git clone https://github.com/google/benchmark.git && \
    rm -rf /benchmark
 
 # Install include-what-you-use
-ENV LLVM_VER "17"
+ENV LLVM_VER "18"
 ENV IWYU /home/iwyu
 ENV IWYU_BUILD ${IWYU}/build
 ENV IWYU_SRC ${IWYU}/include-what-you-use

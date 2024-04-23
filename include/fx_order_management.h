@@ -26,7 +26,8 @@ class FXOrderManagement
   public:
     FXOrderManagement() = default;
 
-    FXOrderManagement(std::string const& account, bool place_trades, int max_retry_failures, int clear_system, std::string sys_path);
+    FXOrderManagement(std::string const& account, bool place_trades, int max_retry_failures, int clear_system, bool file_logging,
+                      std::string sys_path);
 
     ~FXOrderManagement() = default;
 
@@ -59,6 +60,7 @@ class FXOrderManagement
     bool place_trades;
     int max_retry_failures;
     int emergency_close;
+    bool file_logging;
     std::string sys_path;
 
     // Load User Settings
@@ -83,9 +85,7 @@ class FXOrderManagement
 
     // Getting Price History
     std::size_t last_bar_timestamp, next_bar_timestamp;
-    std::vector<std::string> price_data_update_failure, data_error_list;
-    std::unordered_map<std::string, int> price_data_update_failure_count;
-    std::unordered_map<std::string, std::size_t> price_data_update_datetime;
+    std::unordered_map<std::string, int> price_update_failure_count;
 
     // Placing Trades
     int execution_loop_count;
@@ -94,7 +94,7 @@ class FXOrderManagement
     float initial_equity;
 
     // General Use
-    int update_frequency_seconds;
+    int update_frequency_seconds, general_error_count;
     FXUtilities fx_utilities;
     FXMarketTime fx_market_time;
 
@@ -106,19 +106,21 @@ class FXOrderManagement
     // Forex Order Management
     // ==============================================================================================
 
-    [[nodiscard]] std::expected<bool, FXException> build_trades_map();
+    [[nodiscard]] std::expected<bool, FXException> trade_order_sequence();
 
-    [[nodiscard]] std::expected<bool, FXException> emergency_position_close();
+    [[nodiscard]] std::expected<std::vector<nlohmann::json>, FXException> build_trades();
 
-    [[nodiscard]] std::expected<bool, FXException> return_tick_history(std::vector<std::string> const& symbols_list);
+    void return_tick_history(std::vector<std::string> const& symbols_list);
 
-    [[nodiscard]] std::expected<bool, FXException> return_price_history(std::vector<std::string> const& symbols_list);
+    void return_price_history(std::vector<std::string> const& symbols_list);
 
     [[nodiscard]] std::expected<bool, FXException> pause_till_next_bar();
 
-    [[nodiscard]] std::expected<bool, FXException> execute_signals(nlohmann::json& trade_dict);
+    [[nodiscard]] std::expected<bool, FXException> execute_signals(std::vector<nlohmann::json>& trade_dict);
 
-    [[nodiscard]] std::expected<bool, FXException> verify_trades_opened(nlohmann::json& trade_dict);
+    [[nodiscard]] std::expected<bool, FXException> monitor_active_orders();
+
+    [[nodiscard]] std::expected<bool, FXException> verify_trades_opened(std::vector<nlohmann::json>& trade_dict);
 
     // ==============================================================================================
     // Gain Capital API

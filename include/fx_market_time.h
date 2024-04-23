@@ -25,7 +25,7 @@ class FXMarketTime
 
     [[nodiscard]] std::expected<bool, FXException> initialize_forex_market_time();
 
-    [[nodiscard]] std::size_t seconds_till_market_is_open(int start_days_adjustment, int end_days_adjustment);
+    [[nodiscard]] int seconds_till_market_is_open(int start_days_adjustment, int end_days_adjustment);
 
     [[nodiscard]] bool is_market_open_today(std::string todays_date, int start_days_adjustment, int end_days_adjustment, int day_of_week);
 
@@ -47,7 +47,7 @@ class FXMarketTime
 
     void adjust_start_and_end_hours(int adjustment, int& start_days_adjustment, int& end_days_adjustment) noexcept;
 
-    void wait_till_trading_day(int& start_days_adjustment, int& end_days_adjustment);
+    void wait_till_active_trading_day(int adjustment_seconds, int& start_days_adjustment, int& end_days_adjustment);
 
     void set_trading_time_bounds() noexcept;
 

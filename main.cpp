@@ -23,8 +23,11 @@ int main(int argc, char* argv[])
     int EMERGENCY_CLOSE;
     fxordermgmt::userInputEmergencyClose(EMERGENCY_CLOSE);
 
+    // File Logging
+    bool file_logging = true;
+
     // Initialize Order Management
-    fxordermgmt::FXOrderManagement fx {ACCOUNT, PLACE_TRADES, MAX_RETRY_FAILURES, EMERGENCY_CLOSE, std::filesystem::current_path()};
+    fxordermgmt::FXOrderManagement fx {ACCOUNT, PLACE_TRADES, MAX_RETRY_FAILURES, EMERGENCY_CLOSE, file_logging, std::filesystem::current_path()};
 
     auto initialization_response = fx.initialize_order_management();
     if (! initialization_response)

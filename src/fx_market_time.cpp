@@ -7,6 +7,7 @@
 #include <unistd.h>// for sleep
 
 #include <algorithm>      // for find
+#include <array>          // for array
 #include <chrono>         // for __time_zone_representation, zoned_time, cur...
 #include <cmath>          // for round
 #include <expected>       // for expected
@@ -16,7 +17,6 @@
 #include <source_location>// for current, function_name...
 #include <string>         // for allocator, basic_string, char_traits, opera...
 #include <string_view>    // for basic_string_view
-#include <vector>         // for vector
 
 #include "fx_exception.h"// for FXException
 
@@ -61,15 +61,15 @@ std::expected<bool, FXException> FXMarketTime::initialize_forex_market_time()
     }
     // -------------------
     if (! fx_market_time_testing) { set_timezone_offset(); }
-    // -------------------
+
     int start_days_adjustment = 0, end_days_adjustment = 0;
     adjust_start_and_end_hours(tz_offset, start_days_adjustment, end_days_adjustment);
-    // -------------------
+
     int seconds_to_wait = seconds_till_market_is_open(start_days_adjustment, end_days_adjustment);
-    pause_for_set_time(seconds_to_wait);
-    // -------------------
-    wait_till_trading_day(start_days_adjustment, end_days_adjustment);
-    // -------------------
+    if (seconds_to_wait > 0) { pause_for_set_time(seconds_to_wait); }
+
+    wait_till_active_trading_day(seconds_to_wait, start_days_adjustment, end_days_adjustment);
+
     set_trading_time_bounds();
     // -------------------
     return std::expected<bool, FXException> {true};
@@ -110,38 +110,48 @@ void FXMarketTime::adjust_start_and_end_hours(int adjustment, int& start_days_ad
     }
 }
 
-std::size_t FXMarketTime::seconds_till_market_is_open(int start_days_adjustment, int end_days_adjustment)
+int FXMarketTime::seconds_till_market_is_open(int start_days_adjustment, int end_days_adjustment)
 {
     time_t now = time(0);
     struct tm* now_local = localtime(&now);
-    int const local_hour = now_local->tm_hour;
+    double const local_time_hr = now_local->tm_hour + now_local->tm_min / 60.0 + now_local->tm_sec / 3600.0;
     // -------------------
-    if ((start_days_adjustment == end_days_adjustment && local_hour < end_hr && start_hr <= local_hour) ||
-        (start_days_adjustment != end_days_adjustment && (local_hour < end_hr || start_hr <= local_hour)))
+    // Market is inside the Start Hr & End Hr. Negative seconds will only be used if the trading day is closed (Weekend, Holiday).
+    if (start_days_adjustment == end_days_adjustment && local_time_hr < end_hr && start_hr <= local_time_hr)
     {
-        return 0;
+        return (start_hr - local_time_hr) * 3600;
     }
-    else { return (local_hour < start_hr) ? (start_hr - local_hour) * 3600 : (start_hr + 24 - local_hour) * 3600; }
+    else if (start_days_adjustment != end_days_adjustment && (local_time_hr < end_hr || start_hr <= local_time_hr))
+    {
+        return (local_time_hr < start_hr) ? (-24 + start_hr - local_time_hr) * 3600 : (start_hr - local_time_hr) * 3600;
+    }
+    // Market is Closed.
+    else { return (local_time_hr < start_hr) ? (start_hr - local_time_hr) * 3600 : (start_hr + 24 - local_time_hr) * 3600; }
 }
 
-void FXMarketTime::wait_till_trading_day(int& start_days_adjustment, int& end_days_adjustment)
+void FXMarketTime::wait_till_active_trading_day(int adjustment_seconds, int& start_days_adjustment, int& end_days_adjustment)
 {
     bool market_is_open = is_market_open_today(get_todays_date(), start_days_adjustment, end_days_adjustment, get_day_of_week());
     // -------------------
     while (! market_is_open)
-    {           
+    {
         // Check if TX Offset changes due to DST
         int const temp_tz_offset = tz_offset;
         set_timezone_offset();
         int const DST_adjustment = tz_offset - temp_tz_offset;
         if (DST_adjustment) { adjust_start_and_end_hours(DST_adjustment, start_days_adjustment, end_days_adjustment); }
-        // -------------------
+
         int HOURS_24_TO_SECONDS = 86400;
         HOURS_24_TO_SECONDS -= DST_adjustment * 3600;
+        if (adjustment_seconds < 0)
+        {
+            HOURS_24_TO_SECONDS += adjustment_seconds;
+            adjustment_seconds = 0;
+        }
         pause_for_set_time(HOURS_24_TO_SECONDS);
         // -------------------
         market_is_open = is_market_open_today(get_todays_date(), start_days_adjustment, end_days_adjustment, get_day_of_week());
-    } 
+    }
 }
 
 void FXMarketTime::set_trading_time_bounds() noexcept
@@ -151,7 +161,7 @@ void FXMarketTime::set_trading_time_bounds() noexcept
     ch::time_point time_now = ch::system_clock::now();
     int const trade_hours_duration = end_hr - start_hr;
     int const tz_offset_seconds = tz_offset * 3600;
-    // -------------------
+
     FX_market_start = ch::floor<ch::seconds>(time_now).time_since_epoch().count() - tz_offset_seconds;
     FX_market_end = ((ch::floor<ch::seconds>(time_now) + ch::hours {trade_hours_duration - 1} + ch::minutes {58}).time_since_epoch()).count() * 60 -
                     tz_offset_seconds;
@@ -160,18 +170,17 @@ void FXMarketTime::set_trading_time_bounds() noexcept
 
 void FXMarketTime::pause_for_set_time(std::size_t seconds_to_wait) const noexcept
 {
-    std::cout << "Market Closed; Waiting for Market Open; Will be waiting for " << round(seconds_to_wait / 36) / 100 << " Hours...\n";
-    // -------------------
+    std::cout << "Market Closed; Will check if market is open in " << round(seconds_to_wait / 36) / 100 << " Hours...\n";
     sleep(seconds_to_wait);
 }
 
 bool FXMarketTime::is_market_open_today(std::string todays_date, int start_days_adjustment, int end_days_adjustment, int day_of_week)
 {
     // Holidays Must Be Updated as Required
-    std::vector<std::string> holidays = {"2024_01_01", "2024_01_15", "2024_02_19", "2024_03_29", "2024_05_27", "2024_06_19",
-                                         "2024_07_04", "2024_09_02", "2024_11_28", "2024_11_29", "2024_12_24", "2024_12_25"};
-    std::vector<int> days_of_week_to_trade_start = {0, 1, 2, 3, 4};
-    std::vector<int> days_of_week_to_trade_end = {0, 1, 2, 3, 4};
+    std::array<std::string, 12> const holidays = {"2024_01_01", "2024_01_15", "2024_02_19", "2024_03_29", "2024_05_27", "2024_06_19",
+                                                  "2024_07_04", "2024_09_02", "2024_11_28", "2024_11_29", "2024_12_24", "2024_12_25"};
+    std::array<int, 5> days_of_week_to_trade_start = {0, 1, 2, 3, 4};
+    std::array<int, 5> days_of_week_to_trade_end = {0, 1, 2, 3, 4};
     for (auto& item : days_of_week_to_trade_start) { item += start_days_adjustment; }
     for (auto& item : days_of_week_to_trade_end) { item += end_days_adjustment; }
 
