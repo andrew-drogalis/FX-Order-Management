@@ -1,6 +1,6 @@
 cmake_minimum_required(VERSION 3.20)
 
-set(CMAKE_CXX_STANDARD 20)
+set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 include(GNUInstallDirs)
 
@@ -118,8 +118,7 @@ target_link_libraries(
 # Add a testing executable
 add_executable(
   functional_tests_failure_scenario
-  unit_test_utilities.cpp
-  unit_test_order_management.cpp
+  functional_test_failure_env.cpp
   ${PARENT_DIR}/src/fx_market_time.cpp
   ${PARENT_DIR}/src/fx_order_management.cpp
   ${PARENT_DIR}/src/fx_trading_model.cpp

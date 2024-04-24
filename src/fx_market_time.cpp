@@ -60,15 +60,15 @@ std::expected<bool, FXException> FXMarketTime::initialize_forex_market_time()
         return std::expected<bool, FXException> {std::unexpect, std::source_location::current().function_name(), "Provide Value Between 0 and 24."};
     }
     // -------------------
-    if (! fx_market_time_testing) { set_timezone_offset(); }
+    if (! fx_market_time_testing)
+    {
+        set_timezone_offset();
 
-    int start_days_adjustment = 0, end_days_adjustment = 0;
-    adjust_start_and_end_hours(tz_offset, start_days_adjustment, end_days_adjustment);
+        int start_days_adjustment = 0, end_days_adjustment = 0;
+        adjust_start_and_end_hours(tz_offset, start_days_adjustment, end_days_adjustment);
 
-    int seconds_to_wait = seconds_till_market_is_open(start_days_adjustment, end_days_adjustment);
-    if (seconds_to_wait > 0) { pause_for_set_time(seconds_to_wait); }
-
-    wait_till_active_trading_day(seconds_to_wait, start_days_adjustment, end_days_adjustment);
+        wait_till_active_trading_day(start_days_adjustment, end_days_adjustment);
+    }
 
     set_trading_time_bounds();
     // -------------------
@@ -126,32 +126,52 @@ int FXMarketTime::seconds_till_market_is_open(int start_days_adjustment, int end
         return (local_time_hr < start_hr) ? (-24 + start_hr - local_time_hr) * 3600 : (start_hr - local_time_hr) * 3600;
     }
     // Market is Closed.
-    else { return (local_time_hr < start_hr) ? (start_hr - local_time_hr) * 3600 : (start_hr + 24 - local_time_hr) * 3600; }
+    else
+    {
+        return (local_time_hr < start_hr) ? (start_hr - local_time_hr) * 3600 : (start_hr + 24 - local_time_hr) * 3600;
+    }
 }
 
-void FXMarketTime::wait_till_active_trading_day(int adjustment_seconds, int& start_days_adjustment, int& end_days_adjustment)
+void FXMarketTime::wait_till_active_trading_day(int& start_days_adjustment, int& end_days_adjustment)
 {
+    int seconds_till_open = seconds_till_market_is_open(start_days_adjustment, end_days_adjustment);
+    if (seconds_till_open > 0)
+    {
+        pause_for_set_time(seconds_till_open);
+    }
+
     bool market_is_open = is_market_open_today(get_todays_date(), start_days_adjustment, end_days_adjustment, get_day_of_week());
     // -------------------
     while (! market_is_open)
     {
-        // Check if TX Offset changes due to DST
-        int const temp_tz_offset = tz_offset;
-        set_timezone_offset();
-        int const DST_adjustment = tz_offset - temp_tz_offset;
-        if (DST_adjustment) { adjust_start_and_end_hours(DST_adjustment, start_days_adjustment, end_days_adjustment); }
-
-        int HOURS_24_TO_SECONDS = 86400;
-        HOURS_24_TO_SECONDS -= DST_adjustment * 3600;
-        if (adjustment_seconds < 0)
-        {
-            HOURS_24_TO_SECONDS += adjustment_seconds;
-            adjustment_seconds = 0;
-        }
-        pause_for_set_time(HOURS_24_TO_SECONDS);
+        int time_to_wait = seconds_till_market_open_tomorrow(seconds_till_open, start_days_adjustment, end_days_adjustment);
+        pause_for_set_time(time_to_wait);
         // -------------------
         market_is_open = is_market_open_today(get_todays_date(), start_days_adjustment, end_days_adjustment, get_day_of_week());
     }
+}
+
+int FXMarketTime::seconds_till_market_open_tomorrow(int& adjustment_seconds, int& start_days_adjustment, int& end_days_adjustment)
+{
+    int const HOURS_24_TO_SECONDS = 86400;
+    int result_seconds = HOURS_24_TO_SECONDS;
+
+    // Check if TX Offset changes due to DST
+    int const temp_tz_offset = tz_offset;
+    set_timezone_offset();
+    int const DST_adjustment = tz_offset - temp_tz_offset;
+    if (DST_adjustment)
+    {
+        adjust_start_and_end_hours(DST_adjustment, start_days_adjustment, end_days_adjustment);
+    }
+
+    result_seconds -= DST_adjustment * 3600;
+    if (adjustment_seconds < 0)
+    {
+        result_seconds += adjustment_seconds;
+        adjustment_seconds = 0;
+    }
+    return result_seconds;
 }
 
 void FXMarketTime::set_trading_time_bounds() noexcept
@@ -190,23 +210,38 @@ bool FXMarketTime::is_market_open_today(std::string todays_date, int start_days_
     {
         return true;
     }
-    else { return false; }
+    else
+    {
+        return false;
+    }
 }
 
 bool FXMarketTime::is_market_closed() const noexcept
 {
     std::size_t const time_now = (ch::system_clock::now().time_since_epoch()).count() * ch::system_clock::period::num / ch::system_clock::period::den;
     // -------------------
-    if (market_close_time <= time_now) { return true; }
-    else { return false; }
+    if (market_close_time <= time_now)
+    {
+        return true;
+    }
+    else
+    {
+        return false;
+    }
 }
 
 bool FXMarketTime::is_forex_market_close_only() const noexcept
 {
     std::size_t const time_now = (ch::system_clock::now().time_since_epoch()).count() * ch::system_clock::period::num / ch::system_clock::period::den;
     // -------------------
-    if (FX_market_start <= time_now && time_now <= FX_market_end) { return false; }
-    else { return true; }
+    if (FX_market_start <= time_now && time_now <= FX_market_end)
+    {
+        return false;
+    }
+    else
+    {
+        return true;
+    }
 }
 
 // ==============================================================================================

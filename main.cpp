@@ -18,8 +18,14 @@ int main(int argc, char* argv[])
     bool PLACE_TRADES = true;
     int MAX_RETRY_FAILURES = 3;
     // ------------------
-    if (! fxordermgmt::validateMainParameters(argc, argv, ACCOUNT, PLACE_TRADES, MAX_RETRY_FAILURES)) { return 1; }
-    if (! fxordermgmt::validateAccountType(ACCOUNT)) { return 1; }
+    if (! fxordermgmt::validateMainParameters(argc, argv, ACCOUNT, PLACE_TRADES, MAX_RETRY_FAILURES))
+    {
+        return 1;
+    }
+    if (! fxordermgmt::validateAccountType(ACCOUNT))
+    {
+        return 1;
+    }
     int EMERGENCY_CLOSE;
     fxordermgmt::userInputEmergencyClose(EMERGENCY_CLOSE);
 

@@ -39,6 +39,32 @@ Please see a link to required dependencies [below](#Dependencies). If you are in
 
 ## Instructions
 
+### Running the Executable
+
+The arguments to the main function are as follows:
+
+```bash
+./FX-Order-Management -a [Account Type], -p [Place Trades] -m [Max Retry Failures]
+```
+
+```text
+Options:
+    Account Type: Must be "Live" or "Paper" - capitalization doesn't matter
+    Place Trades: Boolean - spelled out or binary values
+    Max Retry Failures: Int - recommended over 0
+```
+
+The default settings in the main.cpp file are the following:
+
+```c
+int main(int argc, char* argv[])
+{
+    std::string ACCOUNT = "PAPER"; 
+    bool PLACE_TRADES = true; 
+    int MAX_RETRY_FAILURES = 3;
+    ...
+```
+
 ### Storing User Credentials
 
 The user should replace the usernames and API key, but the password should not be stored in plain text. The program will prompt the user to assign a new password if one doesn't already exist in the keyring.
@@ -92,19 +118,6 @@ int FXTradingModel::send_trading_signal()
     int const signal = rand() % 2;
     return (signal) ? 1 : -1;
 }
-```
-
-### Switch to Live Trading
-
-The default is paper trading, switch to live account and set place trades to true.
-
-```c
-int main(int argc, char* argv[])
-{
-    std::string ACCOUNT = "PAPER"; 
-    bool PLACE_TRADES = true; 
-    int MAX_RETRY_FAILURES = 3;
-    ...
 ```
 
 ### Profitability Reports

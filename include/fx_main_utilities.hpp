@@ -2,6 +2,9 @@
 // GNU License
 
 #include <ctype.h>// for tolower, toupper
+#include <stdio.h>
+#include <stdlib.h>
+#include <unistd.h>
 
 #include <algorithm>// for transform
 #include <iostream> // for operator<<, basic_ostream, cout, basic_istream:...
@@ -12,40 +15,63 @@ namespace fxordermgmt
 
 [[nodiscard]] bool validateMainParameters(int argc, char* argv[], std::string& ACCOUNT, bool& PLACE_TRADES, int& MAX_RETRY_FAILURES)
 {
-    if (argc > 4)
+    if (argc > 7)
     {
-        std::cout << "Too Many Arguments - Only (3) Arguments: 1. Account Type, 2. Place Trades" << '\n';
+        std::cout << "Too Many Arguments - Only (3) Arguments: -a [Account Type], -p [Place Trades] -m [Max Retry Failures]\n";
         return false;
     }
-    if (argc == 1) { return true; }
-    if (argc >= 2) { ACCOUNT = argv[1]; }
-    if (argc >= 3)
+    if (argc == 1)
     {
-        std::string place_trades_str = argv[2];
-        std::transform(place_trades_str.begin(), place_trades_str.end(), place_trades_str.begin(), ::tolower);
-        // -------------------
-        if (place_trades_str == "1" || place_trades_str == "true") { PLACE_TRADES = true; }
-        else if (place_trades_str == "0" || place_trades_str == "false") { PLACE_TRADES = false; }
-        else
-        {
-            std::cout << "Incorrect Argument for PLACE_TRADES - Provide Either true (1) or false (0)";
-            return false;
-        }
+        return true;
     }
-    if (argc == 4)
+
+    int c;
+    bool success = true;
+    while ((c = getopt(argc, argv, "a:p:m:")) != -1)
     {
-        try
+        switch (c)
         {
-            MAX_RETRY_FAILURES = std::stoi(argv[3]);
+        case 'a':
+            ACCOUNT = optarg;
+            break;
+        case 'p': {
+            std::string place_trades_str = optarg;
+            std::transform(place_trades_str.begin(), place_trades_str.end(), place_trades_str.begin(), ::tolower);
+            // -------------------
+            if (place_trades_str == "1" || place_trades_str == "true")
+            {
+                PLACE_TRADES = true;
+            }
+            else if (place_trades_str == "0" || place_trades_str == "false")
+            {
+                PLACE_TRADES = false;
+            }
+            else
+            {
+                std::cout << "Incorrect Argument for PLACE_TRADES - Provide Either true (1) or false (0)";
+                success = false;
+            }
+            break;
         }
-        catch (std::invalid_argument const& e)
-        {
-            std::cout << "Provide Integer for MAX_RETRY_FAILURES. " << e.what();
-            return false;
+        case 'm': {
+            try
+            {
+                MAX_RETRY_FAILURES = std::stoi(optarg);
+            }
+            catch (std::invalid_argument const& e)
+            {
+                std::cout << "Provide Integer for MAX_RETRY_FAILURES. " << e.what();
+                success = false;
+            }
+            break;
+        }
+        default:
+            std::cout << "Incorrect Argument. Flags are -a [Account Type], -p [Place Trades] -m [Max Retry Failures]\n";
+            success = false;
         }
     }
     // -------------------
-    return true;
+    return success;
 }
 
 [[nodiscard]] bool validateAccountType(std::string& account) noexcept
@@ -76,8 +102,14 @@ void userInputEmergencyClose(int& emergencyClose) noexcept
             std::cout << "\nWrong Input\n";
             continue;
         }
-        if (emergencyClose == 1 || emergencyClose == 0) { break; }
-        else { std::cout << "\nWrong Input\n"; }
+        if (emergencyClose == 1 || emergencyClose == 0)
+        {
+            break;
+        }
+        else
+        {
+            std::cout << "\nWrong Input\n";
+        }
         std::cout << '\n';
     }
 }

@@ -38,8 +38,14 @@ std::expected<std::string, FXException> FXUtilities::keyring_unlock_get_password
     // -------------------
     std::string password, service_id, package;
 
-    if (account_type == "LIVE") { service_id = "Live_Account", package = "com.gain_capital_forex.live_account"; }
-    else { service_id = "Test_Account", package = "com.gain_capital_forex.test_account"; }
+    if (account_type == "LIVE")
+    {
+        service_id = "Live_Account", package = "com.gain_capital_forex.live_account";
+    }
+    else
+    {
+        service_id = "Test_Account", package = "com.gain_capital_forex.test_account";
+    }
     // -------------------
     // Checks to confirm password exists and sets if it doesn't
     error = keychain::Error {};
@@ -108,8 +114,14 @@ std::expected<bool, FXException> FXUtilities::initialize_logging_file(std::strin
     try
     {
         bool valid = std::filesystem::is_directory(dir);
-        if (! valid) { valid = std::filesystem::create_directories(dir); }
-        if (! valid) { throw std::filesystem::filesystem_error {"Could not make directory", std::error_code {}}; }
+        if (! valid)
+        {
+            valid = std::filesystem::create_directories(dir);
+        }
+        if (! valid)
+        {
+            throw std::filesystem::filesystem_error {"Could not make directory", std::error_code {}};
+        }
     }
     catch (std::filesystem::filesystem_error const& e)
     {
@@ -123,11 +135,16 @@ std::expected<bool, FXException> FXUtilities::initialize_logging_file(std::strin
     boost::log::add_common_attributes();
 
     boost::log::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::debug);
+
+    BOOST_LOG_TRIVIAL(info) << "Log File Created";
     // -------------------
     return std::expected<bool, FXException> {true};
 }
 
-void log_to_std_ouput() { static auto console_sink = boost::log::add_console_log(std::cout, boost::log::keywords::format = ">> %Message%"); }
+void FXUtilities::log_to_std_output()
+{
+    static auto console_sink = boost::log::add_console_log(std::cout, boost::log::keywords::format = ">> %Message%");
+}
 
 std::string FXUtilities::get_todays_date() noexcept
 {

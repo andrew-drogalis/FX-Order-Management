@@ -52,11 +52,11 @@ class FXOrderManagement
     // Testing
     // ==============================================================================================
 
-    [[nodiscard]] std::expected<std::string, FXException> enable_testing(std::string const& url);
+    void enable_testing(std::string const& url);
 
   private:
     // Passed Through Constructor
-    std::string const& paper_or_live;
+    std::string paper_or_live;
     bool place_trades;
     int max_retry_failures;
     int emergency_close;
@@ -139,6 +139,8 @@ class FXOrderManagement
     // ==============================================================================================
 
     [[nodiscard]] std::expected<bool, FXException> load_user_settings();
+
+    [[nodiscard]] std::expected<bool, FXException> build_filesystem_directory(std::string const& dir);
 
     [[nodiscard]] std::expected<bool, FXException> read_active_management_file();
 
