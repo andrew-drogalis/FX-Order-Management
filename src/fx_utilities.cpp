@@ -27,17 +27,20 @@ namespace fxordermgmt
 
 std::expected<std::string, FXException> FXUtilities::keyring_unlock_get_password(std::string const& account_type, std::string const& username)
 {
+    if (fx_utilities_testing)
+    {
+        return std::expected<std::string, FXException> {""};
+    }
     // Required to prompt for first keyring unlock
     keychain::Error error = keychain::Error {};
     keychain::setPassword("Forex_Keychain_Unlocker", "", "", "", error);
     if (error)
     {
-        return std::expected<std::string, FXException> {std::unexpect, std::source_location::current().function_name(),
-                                                        "Cannot Unlock Keyring - " + error.message};
+        return std::expected<std::string, FXException> {
+            std::unexpect, std::source_location::current().function_name(), "Cannot Unlock Keyring - " + error.message};
     }
-    // -------------------
-    std::string password, service_id, package;
 
+    std::string password, service_id, package;
     if (account_type == "LIVE")
     {
         service_id = "Live_Account", package = "com.gain_capital_forex.live_account";
@@ -58,8 +61,8 @@ std::expected<std::string, FXException> FXUtilities::keyring_unlock_get_password
         keychain::setPassword(package, service_id, username, password, error);
         if (error)
         {
-            return std::expected<std::string, FXException> {std::unexpect, std::source_location::current().function_name(),
-                                                            "Failed to Set Password - " + error.message};
+            return std::expected<std::string, FXException> {
+                std::unexpect, std::source_location::current().function_name(), "Failed to Set Password - " + error.message};
         }
     }
     else if (error)
@@ -74,21 +77,20 @@ std::expected<bool, FXException> FXUtilities::validate_user_settings(std::string
 {
     std::array<int, 7> const SPAN_M = {1, 2, 3, 5, 10, 15, 30};// Span intervals for minutes
     std::array<int, 4> const SPAN_H = {1, 2, 4, 8};            // Span intervals for hours
-    // -------------------
+
     transform(update_interval.begin(), update_interval.end(), update_interval.begin(), ::toupper);
 
     if (update_interval != "MINUTE" && update_interval != "HOUR")
     {
         return std::expected<bool, FXException> {std::unexpect, std::source_location::current().function_name(),
-                                                 "Interval Error - Provide one of the following intervals: 'HOUR', 'MINUTE'"};
+            "Interval Error - Provide one of the following intervals: 'HOUR', 'MINUTE'"};
     }
-    // -------------------
     if (update_interval == "HOUR")
     {
         if (std::find(SPAN_H.begin(), SPAN_H.end(), update_span) == SPAN_H.end())
         {
-            return std::expected<bool, FXException> {std::unexpect, std::source_location::current().function_name(),
-                                                     "Span Hour Error - Provide one of the following spans: 1, 2, 4, 8"};
+            return std::expected<bool, FXException> {
+                std::unexpect, std::source_location::current().function_name(), "Span Hour Error - Provide one of the following spans: 1, 2, 4, 8"};
         }
         update_frequency_seconds = 3600 * update_span;
     }
@@ -97,7 +99,7 @@ std::expected<bool, FXException> FXUtilities::validate_user_settings(std::string
         if (std::find(SPAN_M.begin(), SPAN_M.end(), update_span) == SPAN_M.end())
         {
             return std::expected<bool, FXException> {std::unexpect, std::source_location::current().function_name(),
-                                                     "Span Minute Error - Provide one of the following spans: 1, 2, 3, 5, 10, 15, 30"};
+                "Span Minute Error - Provide one of the following spans: 1, 2, 3, 5, 10, 15, 30"};
         }
         update_frequency_seconds = 60 * update_span;
     }
@@ -110,7 +112,7 @@ std::expected<bool, FXException> FXUtilities::initialize_logging_file(std::strin
     FXUtilities fxUtils;
     std::string const dir = working_directory + "/interface_files/logs";
     std::string const file_name = dir + "/" + fxUtils.get_todays_date() + "_FX_Order_Management.log";
-    // -------------------
+
     try
     {
         bool valid = std::filesystem::is_directory(dir);
@@ -128,16 +130,15 @@ std::expected<bool, FXException> FXUtilities::initialize_logging_file(std::strin
         return std::expected<bool, FXException> {std::unexpect, std::source_location::current().function_name(), e.what()};
     }
     // -------------------
-    static auto file_sink =
-        boost::log::add_file_log(boost::log::keywords::file_name = file_name, boost::log::keywords::format = "[%TimeStamp%]: %Message%",
-                                 boost::log::keywords::auto_flush = true);
+    static auto file_sink = boost::log::add_file_log(boost::log::keywords::file_name = file_name,
+        boost::log::keywords::format = "[%TimeStamp%]: %Message%", boost::log::keywords::auto_flush = true);
 
     boost::log::add_common_attributes();
 
     boost::log::core::get()->set_filter(boost::log::trivial::severity >= boost::log::trivial::debug);
 
     BOOST_LOG_TRIVIAL(info) << "Log File Created";
-    // -------------------
+
     return std::expected<bool, FXException> {true};
 }
 
@@ -152,7 +153,7 @@ std::string FXUtilities::get_todays_date() noexcept
     char DATE_TODAY[50];
     struct tm* tmp = localtime(&t);
     strftime(DATE_TODAY, sizeof(DATE_TODAY), "%Y_%m_%d", tmp);
-    // -------------------
+
     return DATE_TODAY;
 }
 

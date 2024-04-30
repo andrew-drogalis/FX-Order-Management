@@ -1,23 +1,46 @@
 // Copyright 2024, Andrew Drogalis
 // GNU License
 
-#include <ctype.h>// for tolower, toupper
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
+#include <ctype.h> // for tolower, toupper
+#include <unistd.h>// for optarg, getopt
 
 #include <algorithm>// for transform
-#include <iostream> // for operator<<, basic_ostream, cout, basic_istream:...
+#include <iostream> // for operator<<, basic_ostream, cout, basic_istream
+#include <print>    // for print
+#include <stdexcept>// for invalid_argument
 #include <string>   // for char_traits, basic_string, allocator, operator==
 
 namespace fxordermgmt
 {
 
-[[nodiscard]] bool validateMainParameters(int argc, char* argv[], std::string& ACCOUNT, bool& PLACE_TRADES, int& MAX_RETRY_FAILURES)
+[[nodiscard]] bool check_if_boolean(std::string optarg, std::string const& name, bool& bool_value) noexcept
 {
-    if (argc > 7)
+    std::transform(optarg.begin(), optarg.end(), optarg.begin(), ::tolower);
+
+    if (optarg == "1" || optarg == "true")
     {
-        std::cout << "Too Many Arguments - Only (3) Arguments: -a [Account Type], -p [Place Trades] -m [Max Retry Failures]\n";
+        bool_value = true;
+    }
+    else if (optarg == "0" || optarg == "false")
+    {
+        bool_value = false;
+    }
+    else
+    {
+        std::cout << "Incorrect Argument for " << name << " - Provide Either true (1) or false (0)";
+        return false;
+    }
+    // -------------------
+    return true;
+}
+
+[[nodiscard]] bool validateMainParameters(
+    int argc, char* argv[], std::string& ACCOUNT, int& MAX_RETRY_FAILURES, bool& PLACE_TRADES, bool& EMERGENCY_CLOSE, bool& FILE_LOGGING)
+{
+    if (argc > 11)
+    {
+        std::cout << "Too Many Arguments - Only (5) Arguments: -a [Account Type], -p [Place Trades] -m [Max Retry Failures] -e [Emergency Close] -f "
+                     "[File Logging]\n";
         return false;
     }
     if (argc == 1)
@@ -26,30 +49,37 @@ namespace fxordermgmt
     }
 
     int c;
-    bool success = true;
-    while ((c = getopt(argc, argv, "a:p:m:")) != -1)
+    while ((c = getopt(argc, argv, "a:p:m:e:f:")) != -1)
     {
         switch (c)
         {
-        case 'a':
+        case 'a': {
             ACCOUNT = optarg;
+            if (ACCOUNT != "PAPER" && ACCOUNT != "LIVE")
+            {
+                std::cout << "Wrong Account Type; Select either 'PAPER' or 'LIVE''\n'";
+                return false;
+            }
             break;
+        }
         case 'p': {
-            std::string place_trades_str = optarg;
-            std::transform(place_trades_str.begin(), place_trades_str.end(), place_trades_str.begin(), ::tolower);
-            // -------------------
-            if (place_trades_str == "1" || place_trades_str == "true")
+            if (! check_if_boolean(optarg, "PLACE_TRADES", PLACE_TRADES))
             {
-                PLACE_TRADES = true;
+                return false;
             }
-            else if (place_trades_str == "0" || place_trades_str == "false")
+            break;
+        }
+        case 'e': {
+            if (! check_if_boolean(optarg, "EMERGENCY_CLOSE", EMERGENCY_CLOSE))
             {
-                PLACE_TRADES = false;
+                return false;
             }
-            else
+            break;
+        }
+        case 'f': {
+            if (! check_if_boolean(optarg, "FILE_LOGGING", FILE_LOGGING))
             {
-                std::cout << "Incorrect Argument for PLACE_TRADES - Provide Either true (1) or false (0)";
-                success = false;
+                return false;
             }
             break;
         }
@@ -61,57 +91,20 @@ namespace fxordermgmt
             catch (std::invalid_argument const& e)
             {
                 std::cout << "Provide Integer for MAX_RETRY_FAILURES. " << e.what();
-                success = false;
+                return false;
             }
             break;
         }
         default:
-            std::cout << "Incorrect Argument. Flags are -a [Account Type], -p [Place Trades] -m [Max Retry Failures]\n";
-            success = false;
+            std::cout << "Incorrect Argument. Flags are -a [Account Type], -p [Place Trades] -m [Max Retry Failures] -e [Emergency Close] -f [File "
+                         "Logging]\n";
+            return false;
         }
     }
+    std::print(std::cout, "Account Type: {}, Place Trades: {}, Max Retry Failures: {}, Emergency Close: {}, File Logging: {}", ACCOUNT, PLACE_TRADES,
+        MAX_RETRY_FAILURES, EMERGENCY_CLOSE, FILE_LOGGING);
     // -------------------
-    return success;
-}
-
-[[nodiscard]] bool validateAccountType(std::string& account) noexcept
-{
-    std::transform(account.begin(), account.end(), account.begin(), ::toupper);
-    // -------------------
-    if (account != "PAPER" && account != "LIVE")
-    {
-        std::cout << "Wrong Account Type; Please Select 'PAPER' or 'LIVE'" << '\n';
-        return false;
-    }
-    else
-    {
-        std::cout << "Account Type Initialized: " << account << "\n\n";
-        return true;
-    }
-}
-
-void userInputEmergencyClose(int& emergencyClose) noexcept
-{
-    while (true)
-    {
-        std::cout << "Emergency Close All Positions?\n\nPlease Enter: 1 (Yes); 0 (No);\n\nYour Selection: ";
-        // -------------------
-        std::cin >> emergencyClose;
-        if (std::cin.fail())
-        {
-            std::cout << "\nWrong Input\n";
-            continue;
-        }
-        if (emergencyClose == 1 || emergencyClose == 0)
-        {
-            break;
-        }
-        else
-        {
-            std::cout << "\nWrong Input\n";
-        }
-        std::cout << '\n';
-    }
+    return true;
 }
 
 }// namespace fxordermgmt

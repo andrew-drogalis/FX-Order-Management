@@ -49,7 +49,7 @@ FXMarketTime::FXMarketTime(int start_hr, int end_hr, int update_frequency_second
 {
 }
 
-std::expected<bool, FXException> FXMarketTime::initialize_forex_market_time()
+std::expected<bool, FXException> FXMarketTime::wait_till_forex_market_is_open()
 {
     if (end_hr <= start_hr)
     {
@@ -197,15 +197,15 @@ void FXMarketTime::pause_for_set_time(std::size_t seconds_to_wait) const noexcep
 bool FXMarketTime::is_market_open_today(std::string todays_date, int start_days_adjustment, int end_days_adjustment, int day_of_week)
 {
     // Holidays Must Be Updated as Required
-    std::array<std::string, 12> const holidays = {"2024_01_01", "2024_01_15", "2024_02_19", "2024_03_29", "2024_05_27", "2024_06_19",
-                                                  "2024_07_04", "2024_09_02", "2024_11_28", "2024_11_29", "2024_12_24", "2024_12_25"};
+    std::array<std::string, 12> const holidays = {"2024_01_01", "2024_01_15", "2024_02_19", "2024_03_29", "2024_05_27", "2024_06_19", "2024_07_04",
+        "2024_09_02", "2024_11_28", "2024_11_29", "2024_12_24", "2024_12_25"};
     std::array<int, 5> days_of_week_to_trade_start = {0, 1, 2, 3, 4};
     std::array<int, 5> days_of_week_to_trade_end = {0, 1, 2, 3, 4};
     for (auto& item : days_of_week_to_trade_start) { item += start_days_adjustment; }
     for (auto& item : days_of_week_to_trade_end) { item += end_days_adjustment; }
 
     if ((std::find(days_of_week_to_trade_start.begin(), days_of_week_to_trade_start.end(), day_of_week) != days_of_week_to_trade_start.end() ||
-         std::find(days_of_week_to_trade_end.begin(), days_of_week_to_trade_end.end(), day_of_week) != days_of_week_to_trade_end.end()) &&
+            std::find(days_of_week_to_trade_end.begin(), days_of_week_to_trade_end.end(), day_of_week) != days_of_week_to_trade_end.end()) &&
         std::find(holidays.begin(), holidays.end(), todays_date) == holidays.end())
     {
         return true;
@@ -244,9 +244,7 @@ bool FXMarketTime::is_forex_market_close_only() const noexcept
     }
 }
 
-// ==============================================================================================
-// Testing
-// ==============================================================================================
+// ======== | Testing | ========
 
 void FXMarketTime::enable_testing() noexcept
 {

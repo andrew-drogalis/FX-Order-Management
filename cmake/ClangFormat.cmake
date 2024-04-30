@@ -7,6 +7,7 @@ function(add_clang_format_target TARGET_NAME SOURCE_DIR)
        "${SOURCE_DIR}/src/*.cpp"
        "${SOURCE_DIR}/include/*.h"
        "${SOURCE_DIR}/include/*.hpp"
+       "${SOURCE_DIR}/test/*.cpp"
   )
   add_custom_target(${TARGET_NAME}
         COMMAND ${CLANG-FORMAT_PATH} -i ${FORMAT_SOURCES}

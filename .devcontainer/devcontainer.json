@@ -1,7 +1,7 @@
 // For format details, see https://aka.ms/devcontainer.json. For config options, see the
 
 {
-	"name": "AD-C++-Environment",
+	"name": "C++-Environment",
 	"build": {
 		"dockerfile": "Dockerfile"
 	},

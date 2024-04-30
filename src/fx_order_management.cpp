@@ -31,31 +31,38 @@
 namespace fxordermgmt
 {
 
-FXOrderManagement::FXOrderManagement(std::string const& paper_or_live, bool place_trades, int max_retry_failures, int emergency_close,
-                                     bool file_logging, std::string working_directory)
-    : paper_or_live(paper_or_live), place_trades(place_trades), max_retry_failures(max_retry_failures), emergency_close(emergency_close),
+FXOrderManagement::FXOrderManagement(std::string const& paper_or_live, int max_retry_failures, bool place_trades, bool emergency_close,
+    bool file_logging, std::string working_directory)
+    : paper_or_live(paper_or_live), max_retry_failures(max_retry_failures), place_trades(place_trades), emergency_close(emergency_close),
       file_logging(file_logging), sys_path(working_directory)
 {
 }
 
-// ==============================================================================================
-// Main Entry
-// ==============================================================================================
-
 std::expected<bool, FXException> FXOrderManagement::initialize_order_management()
 {
+    // Start by Loading User Settings
     auto user_settings_response = load_user_settings();
     if (! user_settings_response)
     {
         return user_settings_response;
     }
 
+    // Validate the Settings are in the Correct Format
     auto validation_response = fx_utilities.validate_user_settings(update_interval, update_span, update_frequency_seconds);
     if (! validation_response)
     {
         return validation_response;
     }
 
+    // Initialize Member Variable
+    fx_market_time = FXMarketTime(start_hr, end_hr, update_frequency_seconds);
+    if (fx_order_mgmt_testing)
+    {
+        fx_market_time.enable_testing();
+        fx_utilities.fx_utilities_testing = true;
+    }
+
+    // Get Password from Keyring
     auto password_response = fx_utilities.keyring_unlock_get_password(paper_or_live, trading_account);
     if (! password_response)
     {
@@ -63,12 +70,14 @@ std::expected<bool, FXException> FXOrderManagement::initialize_order_management(
     }
     std::string password = password_response.value();
 
-    fx_market_time = FXMarketTime(start_hr, end_hr, update_frequency_seconds);
-    if (! fx_market_time.initialize_forex_market_time())
+    // Check if the Market is Open
+    auto forex_market_time_response = fx_market_time.wait_till_forex_market_is_open();
+    if (! forex_market_time_response)
     {
-        return false;
+        return forex_market_time_response;
     }
 
+    // Set Vector Sizes & Initialize Trading Models
     for (std::string const& symbol : fx_symbols_to_trade)
     {
         position_multiplier[symbol] = 1;
@@ -79,11 +88,15 @@ std::expected<bool, FXException> FXOrderManagement::initialize_order_management(
         datetime_map[symbol].resize(num_data_points);
         initialize_trading_model(symbol);
     }
-    if (! gain_capital_session(password))
+
+    // Start Gain Capital Session
+    auto gain_capital_response = gain_capital_session(password);
+    if (! gain_capital_response)
     {
-        return false;
+        return gain_capital_response;
     }
 
+    // Create File for Logging Output
     if (file_logging)
     {
         auto logging_response = fx_utilities.initialize_logging_file(sys_path);
@@ -132,9 +145,9 @@ std::expected<bool, FXException> FXOrderManagement::run_order_management_system(
         {
             general_error_count = 0;
         }
-    }
 
-    BOOST_LOG_TRIVIAL(info) << "FX Order Management - Loop Completed";
+        BOOST_LOG_TRIVIAL(info) << "FX Order Management - Update Loop";
+    }
     // -------------------
     return std::expected<bool, FXException> {true};
 }
@@ -185,8 +198,8 @@ std::expected<std::vector<nlohmann::json>, FXException> FXOrderManagement::build
     auto open_positions_response = session.list_open_positions();
     if (! open_positions_response)
     {
-        std::expected<std::vector<nlohmann::json>, FXException> {std::unexpect, open_positions_response.error().where(),
-                                                                 open_positions_response.error().what()};
+        std::expected<std::vector<nlohmann::json>, FXException> {
+            std::unexpect, open_positions_response.error().where(), open_positions_response.error().what()};
     }
     nlohmann::json open_positions = open_positions_response.value()["OpenPositions"];
     // -------------------
@@ -489,8 +502,8 @@ std::expected<bool, FXException> FXOrderManagement::monitor_active_orders()
         std::vector<int> MAJOR_STATUS_ERROR_CODES = {6, 8, 10};
         if (std::find(MAJOR_STATUS_ERROR_CODES.begin(), MAJOR_STATUS_ERROR_CODES.end(), status) != MAJOR_STATUS_ERROR_CODES.end())
         {
-            return std::expected<bool, FXException> {std::unexpect, std::source_location::current().function_name(),
-                                                     "Major Order Status Error: " + std::to_string(status)};
+            return std::expected<bool, FXException> {
+                std::unexpect, std::source_location::current().function_name(), "Major Order Status Error: " + std::to_string(status)};
         }
     }
     // -------------------
@@ -567,8 +580,8 @@ std::expected<bool, FXException> FXOrderManagement::gain_capital_session(std::st
     auto authenticate_session_response = session.authenticate_session();
     if (! authenticate_session_response)
     {
-        return std::expected<bool, FXException> {std::unexpect, authenticate_session_response.error().where(),
-                                                 authenticate_session_response.error().what()};
+        return std::expected<bool, FXException> {
+            std::unexpect, authenticate_session_response.error().where(), authenticate_session_response.error().what()};
     }
 
     BOOST_LOG_TRIVIAL(info) << "FX Order Management - New Gain Capital Session Initiated";
@@ -590,8 +603,8 @@ std::expected<bool, FXException> FXOrderManagement::gain_capital_session(std::st
 // ==============================================================================================
 void FXOrderManagement::initialize_trading_model(std::string const& symbol) noexcept
 {
-    trading_model_map.emplace(symbol, FXTradingModel {open_prices_map[symbol], high_prices_map[symbol], low_prices_map[symbol],
-                                                      close_prices_map[symbol], datetime_map[symbol]});
+    trading_model_map.emplace(symbol,
+        FXTradingModel {open_prices_map[symbol], high_prices_map[symbol], low_prices_map[symbol], close_prices_map[symbol], datetime_map[symbol]});
 
     BOOST_LOG_TRIVIAL(info) << "FX Order Management - Trading Model Initialized for " << symbol;
 }
@@ -602,7 +615,17 @@ void FXOrderManagement::initialize_trading_model(std::string const& symbol) noex
 
 std::expected<bool, FXException> FXOrderManagement::load_user_settings()
 {
-    std::string const file_name = sys_path + "/interface_files/user_settings.json";
+    std::string dir;
+    if (! fx_order_mgmt_testing)
+    {
+        dir = sys_path + "/interface_files";
+    }
+    else
+    {
+        dir = sys_path + fx_mgmt_test_dir;
+    }
+
+    std::string const file_name = sys_path + dir + "/user_settings.json";
 
     std::ifstream in(file_name);
     if (in.is_open())
@@ -620,16 +643,16 @@ std::expected<bool, FXException> FXOrderManagement::load_user_settings()
         }
         if (trading_account == "null")
         {
-            return std::expected<bool, FXException> {std::unexpect, std::source_location::current().function_name(),
-                                                     "'Username' / 'Paper_Username' doesn't exist in user_settings.json."};
+            return std::expected<bool, FXException> {
+                std::unexpect, std::source_location::current().function_name(), "'Username' / 'Paper_Username' doesn't exist in user_settings.json."};
         }
 
         forex_api_key = data["API_Key"].dump();
 
         if (forex_api_key == "null")
         {
-            return std::expected<bool, FXException> {std::unexpect, std::source_location::current().function_name(),
-                                                     "'API_Key' doesn't exist in user_settings.json."};
+            return std::expected<bool, FXException> {
+                std::unexpect, std::source_location::current().function_name(), "'API_Key' doesn't exist in user_settings.json."};
         }
 
         if (data.contains("Positions") && data["Positions"].is_array())
@@ -638,8 +661,8 @@ std::expected<bool, FXException> FXOrderManagement::load_user_settings()
         }
         else
         {
-            return std::expected<bool, FXException> {std::unexpect, std::source_location::current().function_name(),
-                                                     "Key 'Positions' must be an array in user_settings.json."};
+            return std::expected<bool, FXException> {
+                std::unexpect, std::source_location::current().function_name(), "Key 'Positions' must be an array in user_settings.json."};
         }
 
         if (data.contains("Order_Size") && data["Order_Size"].is_number())
@@ -649,16 +672,16 @@ std::expected<bool, FXException> FXOrderManagement::load_user_settings()
         }
         else
         {
-            return std::expected<bool, FXException> {std::unexpect, std::source_location::current().function_name(),
-                                                     "Key 'Order_Size' must be a number in user_settings.json."};
+            return std::expected<bool, FXException> {
+                std::unexpect, std::source_location::current().function_name(), "Key 'Order_Size' must be a number in user_settings.json."};
         }
 
         update_interval = data["Update_Interval"].dump();
 
         if (update_interval == "null")
         {
-            return std::expected<bool, FXException> {std::unexpect, std::source_location::current().function_name(),
-                                                     "'Update_Interval' doesn't exist in user_settings.json."};
+            return std::expected<bool, FXException> {
+                std::unexpect, std::source_location::current().function_name(), "'Update_Interval' doesn't exist in user_settings.json."};
         }
 
         if (data.contains("Update_Span") && data["Update_Span"].is_number())
@@ -667,8 +690,8 @@ std::expected<bool, FXException> FXOrderManagement::load_user_settings()
         }
         else
         {
-            return std::expected<bool, FXException> {std::unexpect, std::source_location::current().function_name(),
-                                                     "Key 'Update_Span' must be a number in user_settings.json."};
+            return std::expected<bool, FXException> {
+                std::unexpect, std::source_location::current().function_name(), "Key 'Update_Span' must be a number in user_settings.json."};
         }
 
         if (data.contains("Num_Data_Points") && data["Num_Data_Points"].is_number())
@@ -677,8 +700,8 @@ std::expected<bool, FXException> FXOrderManagement::load_user_settings()
         }
         else
         {
-            return std::expected<bool, FXException> {std::unexpect, std::source_location::current().function_name(),
-                                                     "Key 'Num_Data_Points' must be a number in user_settings.json."};
+            return std::expected<bool, FXException> {
+                std::unexpect, std::source_location::current().function_name(), "Key 'Num_Data_Points' must be a number in user_settings.json."};
         }
 
         if (data.contains("Start_Hour_London_Exchange") && data["Start_Hour_London_Exchange"].is_number())
@@ -688,7 +711,7 @@ std::expected<bool, FXException> FXOrderManagement::load_user_settings()
         else
         {
             return std::expected<bool, FXException> {std::unexpect, std::source_location::current().function_name(),
-                                                     "Key 'Start_Hour_London_Exchangee' must be a number in user_settings.json."};
+                "Key 'Start_Hour_London_Exchangee' must be a number in user_settings.json."};
         }
 
         if (data.contains("End_Hour_London_Exchange") && data["End_Hour_London_Exchange"].is_number())
@@ -698,13 +721,12 @@ std::expected<bool, FXException> FXOrderManagement::load_user_settings()
         else
         {
             return std::expected<bool, FXException> {std::unexpect, std::source_location::current().function_name(),
-                                                     "Key 'End_Hour_London_Exchange' must be a number in user_settings.json."};
+                "Key 'End_Hour_London_Exchange' must be a number in user_settings.json."};
         }
     }
     else
     {
-        return std::expected<bool, FXException> {
-            std::unexpect, std::source_location::current().function_name(),
+        return std::expected<bool, FXException> {std::unexpect, std::source_location::current().function_name(),
             "User Settings File Doesn't Exist. Download 'interface_files' folder from repository and include in workspace"};
     }
     // -------------------
@@ -735,7 +757,15 @@ std::expected<bool, FXException> FXOrderManagement::build_filesystem_directory(s
 
 std::expected<bool, FXException> FXOrderManagement::read_active_management_file()
 {
-    std::string const dir = sys_path + "/interface_file";
+    std::string dir;
+    if (! fx_order_mgmt_testing)
+    {
+        dir = sys_path + "/interface_files";
+    }
+    else
+    {
+        dir = sys_path + fx_mgmt_test_dir;
+    }
     std::string const file_name = dir + "/active_order_management.json";
     // -------------------
     auto build_directory_response = build_filesystem_directory(dir);
@@ -762,8 +792,8 @@ std::expected<bool, FXException> FXOrderManagement::read_active_management_file(
             {
                 in.close();
             }
-            return std::expected<bool, FXException> {std::unexpect, std::source_location::current().function_name(),
-                                                     "Failed to Parse JSON: " + std::string(e.what())};
+            return std::expected<bool, FXException> {
+                std::unexpect, std::source_location::current().function_name(), "Failed to Parse JSON: " + std::string(e.what())};
         }
 
         for (nlohmann::json::iterator it = data.begin(); it != data.end(); ++it)
@@ -801,14 +831,14 @@ std::expected<bool, FXException> FXOrderManagement::read_active_management_file(
         out.close();
         if (! success)
         {
-            return std::expected<bool, FXException> {std::unexpect, std::source_location::current().function_name(),
-                                                     "Active Management File Failed to Write Data"};
+            return std::expected<bool, FXException> {
+                std::unexpect, std::source_location::current().function_name(), "Active Management File Failed to Write Data"};
         }
     }
     else
     {
-        return std::expected<bool, FXException> {std::unexpect, std::source_location::current().function_name(),
-                                                 "Active Management File Failed to Open"};
+        return std::expected<bool, FXException> {
+            std::unexpect, std::source_location::current().function_name(), "Active Management File Failed to Open"};
     }
     // -------------------
     return std::expected<bool, FXException> {true};
@@ -884,12 +914,8 @@ std::expected<bool, FXException> FXOrderManagement::output_profit_report()
         float profit = round((current_price - entry_price) * 100'000) / 100'000 * direction;
         float profit_percent = (entry_price != 0) ? round(profit * 10'000 / entry_price) / 100 : 0;
 
-        current_positions[market_name] = {{"Direction", position["Direction"]},
-                                          {"Quantity", position["Quantity"]},
-                                          {"Entry Price", position["Price"]},
-                                          {"Current Price", current_price},
-                                          {"Profit", profit},
-                                          {"Profit Percent", profit_percent}};
+        current_positions[market_name] = {{"Direction", position["Direction"]}, {"Quantity", position["Quantity"]},
+            {"Entry Price", position["Price"]}, {"Current Price", current_price}, {"Profit", profit}, {"Profit Percent", profit_percent}};
     }
     // -------------------
     // Collect Totals Data
@@ -900,17 +926,14 @@ std::expected<bool, FXException> FXOrderManagement::output_profit_report()
     float const total_profit = round((equity_total - initial_equity) * 100) / 100;
     float const total_profit_percent = (initial_equity != 0) ? round(total_profit * 10'000 / initial_equity) / 100 : 0;
 
-    current_performance["Performance Information"] = {{"Initial Funds", initial_equity},
-                                                      {"Current Funds", equity_total},
-                                                      {"Margin Utilized", margin_total},
-                                                      {"Profit Cumulative", total_profit},
-                                                      {"Profit Percent Cumulative", total_profit_percent}};
+    current_performance["Performance Information"] = {{"Initial Funds", initial_equity}, {"Current Funds", equity_total},
+        {"Margin Utilized", margin_total}, {"Profit Cumulative", total_profit}, {"Profit Percent Cumulative", total_profit_percent}};
     current_performance["Position Information"] = current_positions;
     time_t time_now = time(NULL);
     current_performance["Last Updated"] = ctime(&time_now);
 
     // Build Directory
-    std::string const dir = sys_path + "/interface_file/reports";
+    std::string const dir = sys_path + "/interface_files/reports";
     std::string const file_name = dir + "/FX_Management_Report_" + fx_utilities.get_todays_date() + ".json";
     // -------------------
     auto build_directory_response = build_filesystem_directory(dir);
@@ -928,8 +951,8 @@ std::expected<bool, FXException> FXOrderManagement::output_profit_report()
         out.close();
         if (! success)
         {
-            return std::expected<bool, FXException> {std::unexpect, std::source_location::current().function_name(),
-                                                     "Profit Report File Failed to Write Data"};
+            return std::expected<bool, FXException> {
+                std::unexpect, std::source_location::current().function_name(), "Profit Report File Failed to Write Data"};
         }
     }
     else
@@ -944,10 +967,11 @@ std::expected<bool, FXException> FXOrderManagement::output_profit_report()
 // Testing
 // ==============================================================================================
 
-void FXOrderManagement::enable_testing(std::string const& url)
+void FXOrderManagement::enable_testing(std::string const& url, std::string const& test_directory)
 {
     fx_order_mgmt_testing = true;
     gain_capital_testing_url = url;
+    fx_mgmt_test_dir = test_directory;
 }
 
 }// namespace fxordermgmt

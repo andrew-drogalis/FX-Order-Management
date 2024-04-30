@@ -23,7 +23,7 @@ class FXMarketTime
 
     FXMarketTime(int start_hr, int end_hr, int update_frequency_seconds) noexcept;
 
-    [[nodiscard]] std::expected<bool, FXException> initialize_forex_market_time();
+    [[nodiscard]] std::expected<bool, FXException> wait_till_forex_market_is_open();
 
     [[nodiscard]] int seconds_till_market_is_open(int start_days_adjustment, int end_days_adjustment);
 
@@ -35,9 +35,7 @@ class FXMarketTime
 
     [[nodiscard]] bool is_forex_market_close_only() const noexcept;
 
-    // ==============================================================================================
-    // Testing
-    // ==============================================================================================
+    // === | Testing | ===
 
     void enable_testing() noexcept;
 

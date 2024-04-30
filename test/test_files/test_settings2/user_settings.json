@@ -1,0 +1,17 @@
+{
+    "Username": "Blank",
+    "Paper_Username": "Blank",
+    "API_Key": "Blank",
+    "Positions": [
+        "USD/JPY",
+        "EUR/USD",
+        "USD/CHF",
+        "USD/CAD"
+    ],
+    "Order_Size": 1000,
+    "Update_Interval": "Minute",
+    "Update_Span": 5,
+    "Num_Data_Points": 10000,
+    "Start_Hour_London_Exchange": 8,
+    "End_Hour_London_Exchange": 20
+}

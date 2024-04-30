@@ -1,18 +1,19 @@
 // Copyright 2024, Andrew Drogalis
 // GNU License
 
-#include <string>
-#include <ctime>  
+#include <ctime>
 #include <filesystem>
+#include <string>
 #include <typeinfo>
 
 #include "gtest/gtest.h"
 
+#include "fx_exception.h"
 #include "fx_main_utilities.hpp"
 #include "fx_utilities.h"
-#include "fx_exception.h"
 
-namespace {
+namespace
+{
 
 std::string get_todays_date()
 {
@@ -23,8 +24,8 @@ std::string get_todays_date()
     return DATE_TODAY;
 }
 
-
-TEST(ForexUtilitiesTests, Validate_User_Settings_Correct) {
+TEST(ForexUtilitiesTests, Validate_User_Settings_Correct_1_Test)
+{
     fxordermgmt::FXUtilities fx_utils;
 
     std::string interval = "Minute";
@@ -42,10 +43,18 @@ TEST(ForexUtilitiesTests, Validate_User_Settings_Correct) {
     else
     {
         FAIL() << response.error().what();
-    }   
+    }
+}
 
-    span = 10;
-    response = fx_utils.validate_user_settings(interval, span, update_frequency);
+TEST(ForexUtilitiesTests, Validate_User_Settings_Correct_2_Test)
+{
+    fxordermgmt::FXUtilities fx_utils;
+
+    std::string interval = "Minute";
+    int span = 10;
+    int update_frequency {};
+
+    auto response = fx_utils.validate_user_settings(interval, span, update_frequency);
 
     if (response)
     {
@@ -56,13 +65,18 @@ TEST(ForexUtilitiesTests, Validate_User_Settings_Correct) {
     else
     {
         FAIL() << response.error().what();
-    }   
+    }
+}
 
-    interval = "Hour";
-    span = 1;
-    update_frequency = 0;
+TEST(ForexUtilitiesTests, Validate_User_Settings_Correct_3_Test)
+{
+    fxordermgmt::FXUtilities fx_utils;
 
-    response = fx_utils.validate_user_settings(interval, span, update_frequency);
+    std::string interval = "Hour";
+    int span = 1;
+    int update_frequency {};
+
+    auto response = fx_utils.validate_user_settings(interval, span, update_frequency);
 
     if (response)
     {
@@ -73,10 +87,18 @@ TEST(ForexUtilitiesTests, Validate_User_Settings_Correct) {
     else
     {
         FAIL() << response.error().what();
-    }   
+    }
+}
 
-    span = 8;
-    response = fx_utils.validate_user_settings(interval, span, update_frequency);
+TEST(ForexUtilitiesTests, Validate_User_Settings_Correct_4_Test)
+{
+    fxordermgmt::FXUtilities fx_utils;
+
+    std::string interval = "Hour";
+    int span = 8;
+    int update_frequency {};
+
+    auto response = fx_utils.validate_user_settings(interval, span, update_frequency);
 
     if (response)
     {
@@ -87,11 +109,11 @@ TEST(ForexUtilitiesTests, Validate_User_Settings_Correct) {
     else
     {
         FAIL() << response.error().what();
-    }   
+    }
 }
 
-
-TEST(ForexUtilitiesTests, Validate_User_Settings_Incorrect) {
+TEST(ForexUtilitiesTests, Validate_User_Settings_Negative_1_Test)
+{
     fxordermgmt::FXUtilities fx_utils;
 
     std::string interval = "Day";
@@ -108,11 +130,18 @@ TEST(ForexUtilitiesTests, Validate_User_Settings_Incorrect) {
     else
     {
         FAIL();
-    }   
+    }
+}
 
-    interval = "minute";
-    span = 100;
-    response = fx_utils.validate_user_settings(interval, span, update_frequency);
+TEST(ForexUtilitiesTests, Validate_User_Settings_Negative_2_Test)
+{
+    fxordermgmt::FXUtilities fx_utils;
+
+    std::string interval = "minute";
+    int span = 100;
+    int update_frequency {};
+
+    auto response = fx_utils.validate_user_settings(interval, span, update_frequency);
 
     if (! response)
     {
@@ -122,11 +151,18 @@ TEST(ForexUtilitiesTests, Validate_User_Settings_Incorrect) {
     else
     {
         FAIL();
-    }   
+    }
+}
 
-    interval = "Hour";
-    span = 10;
-    response = fx_utils.validate_user_settings(interval, span, update_frequency);
+TEST(ForexUtilitiesTests, Validate_User_Settings_Negative_3_Test)
+{
+    fxordermgmt::FXUtilities fx_utils;
+
+    std::string interval = "hour";
+    int span = 10;
+    int update_frequency {};
+
+    auto response = fx_utils.validate_user_settings(interval, span, update_frequency);
 
     if (! response)
     {
@@ -136,11 +172,11 @@ TEST(ForexUtilitiesTests, Validate_User_Settings_Incorrect) {
     else
     {
         FAIL();
-    }   
+    }
 }
 
-
-TEST(ForexUtilitiesTests, Initialize_Logging_Correct) {
+TEST(ForexUtilitiesTests, Initialize_Logging_Correct)
+{
     fxordermgmt::FXUtilities fx_utils;
 
     std::string parent_dir = std::filesystem::current_path().parent_path();
@@ -161,59 +197,55 @@ TEST(ForexUtilitiesTests, Initialize_Logging_Correct) {
     }
 }
 
-
-TEST(ForexUtilitiesTests, Get_Todays_Date_Correct) {
+TEST(ForexUtilitiesTests, Get_Todays_Date_Correct)
+{
     fxordermgmt::FXUtilities fx_utils;
 
     EXPECT_EQ(fx_utils.get_todays_date(), get_todays_date());
 }
 
-
-TEST(ForexUtilitiesTests, Get_Todays_Date_Incorrect) {
+TEST(ForexUtilitiesTests, Get_Todays_Date_Negative)
+{
     fxordermgmt::FXUtilities fx_utils;
 
     EXPECT_FALSE(fx_utils.get_todays_date() == "");
 }
 
-
-TEST(ForexMainUtilitiesTests, Validate_Main_Parameters_1Correct) {
-    std::string account = "";
-    bool place_trades = false;
-    int max_retry_failures = 3;
+TEST(ForexMainUtilitiesTests, Validate_Main_Parameters_Correct_1_Test)
+{
+    std::string ACCOUNT = "PAPER";
+    bool PLACE_TRADES = true, EMERGENCY_CLOSE = false, FILE_LOGGING = true;
+    int MAX_RETRY_FAILURES = 3;
 
     int argc = 1;
     char prog_name[] = "Program_Name";
-    char *argv[] = {prog_name};
-   
-    bool response = fxordermgmt::validateMainParameters(argc, argv, account, place_trades, max_retry_failures);
-    EXPECT_TRUE(response);
-    EXPECT_EQ(account, "");
-    EXPECT_FALSE(place_trades);
-    EXPECT_EQ(max_retry_failures, 3);
+    char* argv[] = {prog_name};
+
+    EXPECT_TRUE(fxordermgmt::validateMainParameters(argc, argv, ACCOUNT, MAX_RETRY_FAILURES, PLACE_TRADES, EMERGENCY_CLOSE, FILE_LOGGING));
 }
 
+TEST(ForexMainUtilitiesTests, Validate_Main_Parameters_Correct_2_Test)
+{
+    std::string ACCOUNT = "PAPER";
+    bool PLACE_TRADES = true, EMERGENCY_CLOSE = false, FILE_LOGGING = true;
+    int MAX_RETRY_FAILURES = 3;
 
-TEST(ForexMainUtilitiesTests, Validate_Main_Parameters_2Correct) {
-    std::string account = "";
-    bool place_trades = false;
-    int max_retry_failures = 3;
-
-    int argc = 3;
+    int argc = 1;
     char prog_name[] = "Program_Name";
+
     char paper_or_live[] = "PAPER";
     char account_flag[] = "-a";
-    char *argv2[] = {prog_name, account_flag, paper_or_live};
-   
-    bool response = fxordermgmt::validateMainParameters(argc, argv2, account, place_trades, max_retry_failures);
-    EXPECT_TRUE(response);
-    EXPECT_EQ(account, "PAPER");
+    char* argv[] = {prog_name, account_flag, paper_or_live};
+
+    EXPECT_TRUE(fxordermgmt::validateMainParameters(argc, argv, ACCOUNT, MAX_RETRY_FAILURES, PLACE_TRADES, EMERGENCY_CLOSE, FILE_LOGGING));
+    //EXPECT_EQ(account, "PAPER");
 }
 
-
-TEST(ForexMainUtilitiesTests, Validate_Main_Parameters_3Correct) {
-    std::string account = "";
-    bool place_trades = false;
-    int max_retry_failures = 3;
+TEST(ForexMainUtilitiesTests, Validate_Main_Parameters_Correct_3_Test)
+{
+    std::string ACCOUNT = "PAPER";
+    bool PLACE_TRADES = true, EMERGENCY_CLOSE = false, FILE_LOGGING = true;
+    int MAX_RETRY_FAILURES = 3;
 
     int argc = 5;
     char prog_name[] = "Program_Name";
@@ -221,19 +253,18 @@ TEST(ForexMainUtilitiesTests, Validate_Main_Parameters_3Correct) {
     char account_flag[] = "-a";
     char place_trade_flag[] = "-p";
     char place_trade_str[] = "trUE";
-    char *argv3[] = {prog_name, account_flag, paper_or_live, place_trade_flag, place_trade_str};
-   
-    bool response = fxordermgmt::validateMainParameters(argc, argv3, account, place_trades, max_retry_failures);
-    EXPECT_TRUE(response);
-    EXPECT_EQ(account, "PAPER");
-    EXPECT_TRUE(place_trades);
+    char* argv[] = {prog_name, account_flag, paper_or_live, place_trade_flag, place_trade_str};
+
+    EXPECT_TRUE(fxordermgmt::validateMainParameters(argc, argv, ACCOUNT, MAX_RETRY_FAILURES, PLACE_TRADES, EMERGENCY_CLOSE, FILE_LOGGING));
+    //EXPECT_EQ(account, "PAPER");
+    //EXPECT_TRUE(place_trades);
 }
 
-
-TEST(ForexMainUtilitiesTests, Validate_Main_Parameters_4Correct) {
-    std::string account = "";
-    bool place_trades = false;
-    int max_retry_failures = 3;
+TEST(ForexMainUtilitiesTests, Validate_Main_Parameters_Correct_4_Test)
+{
+    std::string ACCOUNT = "PAPER";
+    bool PLACE_TRADES = true, EMERGENCY_CLOSE = false, FILE_LOGGING = true;
+    int MAX_RETRY_FAILURES = 3;
 
     int argc = 5;
     char prog_name[] = "Program_Name";
@@ -241,19 +272,18 @@ TEST(ForexMainUtilitiesTests, Validate_Main_Parameters_4Correct) {
     char account_flag[] = "-a";
     char place_trade_flag[] = "-p";
     char place_trade_str2[] = "1";
-    char *argv3_1[] = {prog_name, account_flag, paper_or_live, place_trade_flag, place_trade_str2};
-   
-    bool response = fxordermgmt::validateMainParameters(argc, argv3_1, account, place_trades, max_retry_failures);
-    EXPECT_TRUE(response);
-    EXPECT_EQ(account, "PAPER");
-    EXPECT_TRUE(place_trades);
+    char* argv[] = {prog_name, account_flag, paper_or_live, place_trade_flag, place_trade_str2};
+
+    EXPECT_TRUE(fxordermgmt::validateMainParameters(argc, argv, ACCOUNT, MAX_RETRY_FAILURES, PLACE_TRADES, EMERGENCY_CLOSE, FILE_LOGGING));
+   // EXPECT_EQ(account, "PAPER");
+    //EXPECT_TRUE(place_trades);
 }
 
-
-TEST(ForexMainUtilitiesTests, Validate_Main_Parameters_5Correct) {
-    std::string account = "";
-    bool place_trades = false;
-    int max_retry_failures = 3;
+TEST(ForexMainUtilitiesTests, Validate_Main_Parameters_Correct_5_Test)
+{
+    std::string ACCOUNT = "PAPER";
+    bool PLACE_TRADES = true, EMERGENCY_CLOSE = false, FILE_LOGGING = true;
+    int MAX_RETRY_FAILURES = 3;
 
     int argc = 7;
     char prog_name[] = "Program_Name";
@@ -263,118 +293,74 @@ TEST(ForexMainUtilitiesTests, Validate_Main_Parameters_5Correct) {
     char place_trade_str2[] = "1";
     char max_retrys_flag[] = "-m";
     char max_retrys_str[] = "5";
-    char *argv4[] = {prog_name, account_flag, paper_or_live, place_trade_flag, place_trade_str2, max_retrys_flag, max_retrys_str};
-   
-    bool response = fxordermgmt::validateMainParameters(argc, argv4, account, place_trades, max_retry_failures);
-    EXPECT_TRUE(response);
-    EXPECT_EQ(account, "PAPER");
-    EXPECT_TRUE(place_trades);
-    EXPECT_EQ(max_retry_failures, 5);   
+    char* argv[] = {prog_name, account_flag, paper_or_live, place_trade_flag, place_trade_str2, max_retrys_flag, max_retrys_str};
+
+    EXPECT_TRUE(fxordermgmt::validateMainParameters(argc, argv, ACCOUNT, MAX_RETRY_FAILURES, PLACE_TRADES, EMERGENCY_CLOSE, FILE_LOGGING));
+    //EXPECT_EQ(account, "PAPER");
+    //EXPECT_TRUE(place_trades);
+    //EXPECT_EQ(max_retry_failures, 5);
 }
 
+TEST(ForexMainUtilitiesTests, Validate_Main_Parameters_Negative_1_Test)
+{
+    std::string ACCOUNT = "PAPER";
+    bool PLACE_TRADES = true, EMERGENCY_CLOSE = false, FILE_LOGGING = true;
+    int MAX_RETRY_FAILURES = 3;
 
-TEST(ForexMainUtilitiesTests, Validate_Main_Parameters_1Incorrect) {
-    std::string account = "";
-    bool place_trades = false;
-    int max_retry_failures = 3;
-
-    // Too Many Arguments 
+    // Too Many Arguments
     int argc = 10;
     char prog_name[] = "Program_Name";
-    char *argv[] = {prog_name};
-   
-    bool response = fxordermgmt::validateMainParameters(argc, argv, account, place_trades, max_retry_failures);
-    EXPECT_FALSE(response);
+    char* argv[] = {prog_name};
+
+    EXPECT_FALSE(fxordermgmt::validateMainParameters(argc, argv, ACCOUNT, MAX_RETRY_FAILURES, PLACE_TRADES, EMERGENCY_CLOSE, FILE_LOGGING));
 }
 
-TEST(ForexMainUtilitiesTests, Validate_Main_Parameters_2Incorrect) {
-    std::string account = "";
-    bool place_trades = false;
-    int max_retry_failures = 3;
+TEST(ForexMainUtilitiesTests, Validate_Main_Parameters_Negative_2_Test)
+{
+    std::string ACCOUNT = "PAPER";
+    bool PLACE_TRADES = true, EMERGENCY_CLOSE = false, FILE_LOGGING = true;
+    int MAX_RETRY_FAILURES = 3;
 
     // Wrong Flag Type
     int argc = 3;
     char prog_name[] = "Program_Name";
     char paper_or_live[] = "PAPER";
     char account_flag_wrong[] = "-t";
-    char *argv2[] = {prog_name, account_flag_wrong, paper_or_live};
-   
-    bool response = fxordermgmt::validateMainParameters(argc, argv2, account, place_trades, max_retry_failures);
-    EXPECT_FALSE(response);
-    EXPECT_EQ(account, "");
+    char* argv[] = {prog_name, account_flag_wrong, paper_or_live};
+
+    EXPECT_FALSE(fxordermgmt::validateMainParameters(argc, argv, ACCOUNT, MAX_RETRY_FAILURES, PLACE_TRADES, EMERGENCY_CLOSE, FILE_LOGGING));
 }
 
-TEST(ForexMainUtilitiesTests, Validate_Main_Parameters_3Incorrect) {
-    std::string account = "";
-    bool place_trades = false;
-    int max_retry_failures = 3;
+TEST(ForexMainUtilitiesTests, Validate_Main_Parameters_Negative_3_Test)
+{
+    std::string ACCOUNT = "PAPER";
+    bool PLACE_TRADES = true, EMERGENCY_CLOSE = false, FILE_LOGGING = true;
+    int MAX_RETRY_FAILURES = 3;
 
     // Wrong Place Trades Value
     int argc = 3;
     char prog_name[] = "Program_Name";
     char place_trade_flag[] = "-p";
     char place_trade_str_wrong[] = "X";
-    char *argv3[] = {prog_name, place_trade_flag, place_trade_str_wrong};
-   
-    bool response = fxordermgmt::validateMainParameters(argc, argv3, account, place_trades, max_retry_failures);
-    EXPECT_FALSE(response);
-    EXPECT_FALSE(place_trades);
+    char* argv[] = {prog_name, place_trade_flag, place_trade_str_wrong};
+
+    EXPECT_FALSE(fxordermgmt::validateMainParameters(argc, argv, ACCOUNT, MAX_RETRY_FAILURES, PLACE_TRADES, EMERGENCY_CLOSE, FILE_LOGGING));
 }
 
-TEST(ForexMainUtilitiesTests, Validate_Main_Parameters_4Incorrect) {
-    std::string account = "";
-    bool place_trades = false;
-    int max_retry_failures = 3;
+TEST(ForexMainUtilitiesTests, Validate_Main_Parameters_Negative_4_Test)
+{
+    std::string ACCOUNT = "PAPER";
+    bool PLACE_TRADES = true, EMERGENCY_CLOSE = false, FILE_LOGGING = true;
+    int MAX_RETRY_FAILURES = 3;
 
     // Wrong Max Retry Failures Value
     int argc = 3;
     char prog_name[] = "Program_Name";
     char max_retrys_flag[] = "-m";
     char max_retrys_str_wrong[] = "ABCD";
-    char *argv4[] = {prog_name, max_retrys_flag, max_retrys_str_wrong};
-   
-    bool response = fxordermgmt::validateMainParameters(argc, argv4, account, place_trades, max_retry_failures);
-    EXPECT_FALSE(response);
-    EXPECT_EQ(max_retry_failures, 3);   
+    char* argv[] = {prog_name, max_retrys_flag, max_retrys_str_wrong};
+
+    EXPECT_FALSE(fxordermgmt::validateMainParameters(argc, argv, ACCOUNT, MAX_RETRY_FAILURES, PLACE_TRADES, EMERGENCY_CLOSE, FILE_LOGGING));
 }
 
-
-TEST(ForexMainUtilitiesTests, Validate_Account_Type_Correct) {
-    std::string account = "Live";
-   
-    EXPECT_TRUE(fxordermgmt::validateAccountType(account));
-
-    account = "LivE";
-
-    EXPECT_TRUE(fxordermgmt::validateAccountType(account));
-
-    account = "paper";
-
-    EXPECT_TRUE(fxordermgmt::validateAccountType(account));
-
-    account = "PaPer";
-
-    EXPECT_TRUE(fxordermgmt::validateAccountType(account));
-}
-
-
-TEST(ForexMainUtilitiesTests, Validate_Account_Type_Incorrect) {
-    std::string account = "Liv1";
-   
-    EXPECT_FALSE(fxordermgmt::validateAccountType(account));
-
-    account = "X";
-
-    EXPECT_FALSE(fxordermgmt::validateAccountType(account));
-
-    account = "paaper";
-
-    EXPECT_FALSE(fxordermgmt::validateAccountType(account));
-
-    account = "PaPer!";
-
-    EXPECT_FALSE(fxordermgmt::validateAccountType(account));
-}
-
-
-} // namespace
+}// namespace

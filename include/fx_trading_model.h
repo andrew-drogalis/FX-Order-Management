@@ -15,7 +15,7 @@ class FXTradingModel
     FXTradingModel() = delete;
 
     FXTradingModel(std::vector<float> const& open_prices, std::vector<float> const& high_prices, std::vector<float> const& low_prices,
-                   std::vector<float> const& close_prices, std::vector<float> const& date_time);
+        std::vector<float> const& close_prices, std::vector<float> const& date_time);
 
     [[nodiscard]] int send_trading_signal();
 

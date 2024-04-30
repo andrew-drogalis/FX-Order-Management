@@ -24,10 +24,15 @@ namespace fxordermgmt
 class FXOrderManagement
 {
   public:
+    // Load User Settings
+    std::vector<std::string> fx_symbols_to_trade;
+    std::string trading_account, forex_api_key, update_interval;
+    int start_hr, end_hr, num_data_points, update_span, order_position_size;
+
     FXOrderManagement() = default;
 
-    FXOrderManagement(std::string const& account, bool place_trades, int max_retry_failures, int clear_system, bool file_logging,
-                      std::string sys_path);
+    FXOrderManagement(
+        std::string const& account, int max_retry_failures, bool place_trades, bool clear_system, bool file_logging, std::string sys_path);
 
     ~FXOrderManagement() = default;
 
@@ -40,44 +45,29 @@ class FXOrderManagement
 
     FXOrderManagement& operator=(FXOrderManagement&& obj) noexcept = default;
 
-    // ==============================================================================================
-    // Main Entry
-    // ==============================================================================================
+    // === | Main Entry Points | ===
 
     [[nodiscard]] std::expected<bool, FXException> initialize_order_management();
 
     [[nodiscard]] std::expected<bool, FXException> run_order_management_system();
 
-    // ==============================================================================================
-    // Testing
-    // ==============================================================================================
+    // === | Testing | ===
 
-    void enable_testing(std::string const& url);
+    void enable_testing(std::string const& url, std::string const& test_directory);
 
   private:
     // Passed Through Constructor
     std::string paper_or_live;
-    bool place_trades;
     int max_retry_failures;
-    int emergency_close;
-    bool file_logging;
+    bool place_trades, emergency_close, file_logging;
     std::string sys_path;
-
-    // Load User Settings
-    std::vector<std::string> fx_symbols_to_trade;
-    std::string trading_account, forex_api_key, update_interval;
-    int start_hr, end_hr, num_data_points, update_span, order_position_size;
 
     // For Gain Capital
     gaincapital::GCClient session;
 
     // For Trading Indicator
     std::unordered_map<std::string, FXTradingModel> trading_model_map;
-    std::unordered_map<std::string, std::vector<float>> open_prices_map;
-    std::unordered_map<std::string, std::vector<float>> high_prices_map;
-    std::unordered_map<std::string, std::vector<float>> low_prices_map;
-    std::unordered_map<std::string, std::vector<float>> close_prices_map;
-    std::unordered_map<std::string, std::vector<float>> datetime_map;
+    std::unordered_map<std::string, std::vector<float>> open_prices_map, high_prices_map, low_prices_map, close_prices_map, datetime_map;
 
     // Building Trades
     std::unordered_map<std::string, int> position_multiplier;
@@ -100,11 +90,9 @@ class FXOrderManagement
 
     // Testing
     bool fx_order_mgmt_testing = false;
-    std::string gain_capital_testing_url;
+    std::string gain_capital_testing_url, fx_mgmt_test_dir;
 
-    // ==============================================================================================
-    // Forex Order Management
-    // ==============================================================================================
+    // === | Testing | ===
 
     [[nodiscard]] std::expected<bool, FXException> trade_order_sequence();
 
@@ -122,21 +110,15 @@ class FXOrderManagement
 
     [[nodiscard]] std::expected<bool, FXException> verify_trades_opened(std::vector<nlohmann::json>& trade_dict);
 
-    // ==============================================================================================
-    // Gain Capital API
-    // ==============================================================================================
+    // === | Gain Capital API | ===
 
     [[nodiscard]] std::expected<bool, FXException> gain_capital_session(std::string const& password);
 
-    // ==============================================================================================
-    // FX Trading Model
-    // ==============================================================================================
+    // === | FX Trading Model | ===
 
     void initialize_trading_model(std::string const& symbol) noexcept;
 
-    // ==============================================================================================
-    // Forex File I/O
-    // ==============================================================================================
+    // === | Forex File I/O | ===
 
     [[nodiscard]] std::expected<bool, FXException> load_user_settings();
 

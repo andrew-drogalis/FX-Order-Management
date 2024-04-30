@@ -16,12 +16,14 @@ class FXUtilities
 {
 
   public:
-    FXUtilities() noexcept = default;
+    bool fx_utilities_testing = false;
+
+    FXUtilities() = default;
 
     [[nodiscard]] std::expected<std::string, FXException> keyring_unlock_get_password(std::string const& account_type, std::string const& username);
 
-    [[nodiscard]] std::expected<bool, FXException> validate_user_settings(std::string& update_interval, int update_span,
-                                                                          int& update_frequency_seconds);
+    [[nodiscard]] std::expected<bool, FXException> validate_user_settings(
+        std::string& update_interval, int update_span, int& update_frequency_seconds);
 
     static std::expected<bool, FXException> initialize_logging_file(std::string const& working_directory);
 

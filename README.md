@@ -24,7 +24,7 @@ This repository is dependent upon the API from Gain Capital's Forex.com. To make
 
 ### Downloading Dependencies
 
-Please see a link to required dependencies [below](#Dependencies). If you are in Linux, Boost & OpenSSL & libsecret can be installed with the following commands below. Additionally, this repository comes with a .devcontainer directory. The .devcontainer has all the required dependencies and can be run inside a Docker container.
+Please see a link to required dependencies [below](#Dependencies). If you are in Linux, Boost, OpenSSL, libsecret, & libmicrohttpd can be installed with the following commands below. 
 
 ```
     Fedora:
@@ -44,14 +44,16 @@ Please see a link to required dependencies [below](#Dependencies). If you are in
 The arguments to the main function are as follows:
 
 ```bash
-./FX-Order-Management -a [Account Type], -p [Place Trades] -m [Max Retry Failures]
+./FX-Order-Management -a [Account Type], -p [Place Trades] -m [Max Retry Failures] -e [Emergency Close] -f [File Logging]
 ```
 
 ```text
-Options:
-    Account Type: Must be "Live" or "Paper" - capitalization doesn't matter
-    Place Trades: Boolean - spelled out or binary values
-    Max Retry Failures: Int - recommended over 0
+Types:
+    Account Type: String - Must be "Live" or "Paper" 
+    Place Trades: Boolean 
+    Emergency Close: Boolean
+    File Logging: Boolean 
+    Max Retry Failures: Int 
 ```
 
 The default settings in the main.cpp file are the following:
@@ -59,8 +61,9 @@ The default settings in the main.cpp file are the following:
 ```c
 int main(int argc, char* argv[])
 {
-    std::string ACCOUNT = "PAPER"; 
-    bool PLACE_TRADES = true; 
+    // USER INPUT DEFAULTS
+    std::string ACCOUNT = "PAPER";
+    bool PLACE_TRADES = true, EMERGENCY_CLOSE = false, FILE_LOGGING = true;
     int MAX_RETRY_FAILURES = 3;
     ...
 ```
@@ -90,7 +93,7 @@ The user should replace the usernames and API key, but the password should not b
 ```
 
 ```txt
-Options:
+Types:
     Order_Size: Intervals of 1,000;
     Update_Interval: Minute or Hour;
     Update_Span: MINUTES: 1, 2, 3, 5, 10, 15, 30; HOURS: 1, 2, 4, 8;
@@ -114,9 +117,8 @@ Please don't run in a live trading environment with the placeholder trading mode
 ```c
 int FXTradingModel::send_trading_signal()
 {
-    // User's code to Buy / Sell
-    int const signal = rand() % 2;
-    return (signal) ? 1 : -1;
+    // Replace with User's Code 
+    return (rand() % 2) ? 1 : -1;
 }
 ```
 
@@ -177,7 +179,7 @@ Changing the value to true will either close the trade immediately upon the upda
 ```
 
 ```txt
-Options:
+Types:
     Close_Position: true or false; Closes position at next update interval;
     Position_Size_Multiple: Any Double Number; Changes the quantity relative to the Order_Size;
 ```
@@ -192,15 +194,23 @@ Options:
 
 # Dependencies
 
-- [Boost](https://www.boost.org/) - *Must be installed by user*
-- [Libsecret](https://wiki.gnome.org/Projects/Libsecret) - *For Linux, Must be installed by user*
-- [OpenSSL](https://www.openssl.org/) - *Must be installed by user*
-- [libmicrohttpd](https://www.gnu.org/software/libmicrohttpd/) - Required for Tests Only - *Must be installed by user*
-- [CPR](https://github.com/libcpr/cpr) - Included in CMake Fetch Content
-- [JSON](https://github.com/nlohmann/json) - .hpp file included in repository
-- [Gain Capital API C++](https://github.com/andrew-drogalis/Gain-Capital-API-Cpp) - Library included in repository
-- [Keychain](https://github.com/hrantzsch/keychain) - Library included in repository
-- [httpmockserver](https://github.com/seznam/httpmockserver) - Required for Tests Only - Library included in repository
+This repository contains a .devcontainer directory. The .devcontainer has all the required dependencies and can be run inside Docker with the Dev Containers VSCode extension.
+
+#### Included In Repository
+
+- [C++ Requests Library](https://github.com/libcpr/cpr) 
+- [Nlohmann JSON Library](https://github.com/nlohmann/json) 
+- [Gain Capital API C++](https://github.com/andrew-drogalis/Gain-Capital-API-Cpp) 
+- [Keychain](https://github.com/hrantzsch/keychain) 
+- [httpmockserver](https://github.com/seznam/httpmockserver) | Testing Only
+
+#### User Install Required
+
+- [Boost](https://www.boost.org/) 
+- [Libsecret](https://wiki.gnome.org/Projects/Libsecret) - *For Linux*
+- [OpenSSL](https://www.openssl.org/)
+- [Google Tests](https://github.com/google/googletest) | Testing Only
+- [libmicrohttpd](https://www.gnu.org/software/libmicrohttpd/) | Testing Only
 
 ## License
 
